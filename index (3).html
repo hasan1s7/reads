@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>READS Knowledge Tracing Studio</title>
+  <meta name="description" content="Interactive dashboard for Bayesian and dynamic knowledge tracing." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">READS LAB</p>
+        <h1>Knowledge Tracing Studio</h1>
+        <p class="subhead">Explore how evidence, time, hierarchical pooling, and teacher effects change what the model believes about a learner.</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="researchModeBtn" class="btn btn-secondary" type="button">Research mode: off</button>
+        <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+      </div>
+    </header>
+
+    <section class="hero-card panel">
+      <div>
+        <label class="label" for="conceptInput">Current concept</label>
+        <input id="conceptInput" class="text-input concept-input" value="Quadratic equations" />
+        <div class="preset-row">
+          <button class="chip preset" data-concept="Quadratic equations" type="button">Math</button>
+          <button class="chip preset" data-concept="Cellular respiration" type="button">Biology</button>
+          <button class="chip preset" data-concept="Linear regression" type="button">Statistics</button>
+          <button class="chip preset" data-concept="Historical chronology" type="button">History</button>
+        </div>
+      </div>
+      <div class="belief-card">
+        <p class="muted small">Model's current belief</p>
+        <div class="belief-line">
+          <span id="masteryPercent" class="big-number">50%</span>
+          <span id="confidenceLabel" class="muted">low confidence</span>
+        </div>
+        <div class="progress"><div id="masteryBar" class="progress-fill" style="width:50%"></div></div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Knowledge tracing modules">
+      <button class="tab active" data-tab="evidence" type="button">1 · Evidence</button>
+      <button class="tab" data-tab="time" type="button">2 · Time</button>
+      <button class="tab" data-tab="hierarchy" type="button">3 · Hierarchy</button>
+      <button class="tab" data-tab="teacher" type="button">4 · Teacher effect</button>
+      <button class="tab" data-tab="decision" type="button">5 · Next activity</button>
+      <button class="tab" data-tab="math" type="button">Math</button>
+    </nav>
+
+    <section class="tab-panel active" data-panel="evidence">
+      <div class="two-col">
+        <div class="panel">
+          <h2>Add one piece of learner evidence</h2>
+          <p class="muted">A correct free-response answer should usually count more than a correct multiple-choice guess.</p>
+
+          <label class="label">How did the learner respond?</label>
+          <select id="taskSelect" class="select-input">
+            <option value="mc">Multiple choice</option>
+            <option value="recognition">Recognition</option>
+            <option value="short" selected>Short-answer retrieval</option>
+            <option value="recall">Extended recall</option>
+            <option value="guided">Guided solution</option>
+            <option value="free">Free response / production</option>
+          </select>
+
+          <div class="field-grid">
+            <label class="field">Result
+              <select id="resultSelect" class="select-input">
+                <option value="1" selected>Correct</option>
+                <option value="0">Incorrect</option>
+              </select>
+            </label>
+            <label class="field">Hints used
+              <select id="hintsSelect" class="select-input">
+                <option value="0" selected>None</option>
+                <option value="1">One</option>
+                <option value="2">Several</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">Difficulty <span id="difficultyLabel" class="mono">0.50</span>
+            <input id="difficultyRange" type="range" min="0" max="1" step="0.05" value="0.5" />
+          </label>
+
+          <button id="applyEvidenceBtn" class="btn btn-primary full" type="button">Apply evidence</button>
+          <div id="explanationBox" class="callout">No evidence has been added yet. Try one observation and the model will explain what changed.</div>
+
+          <div class="research-only hidden formula-box">
+            <div>w = w<sub>task</sub> · w<sub>hint</sub> · w<sub>difficulty</sub></div>
+            <div>α′ = α + wy</div>
+            <div>β′ = β + w(1−y)</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="metric-grid">
+            <div class="metric-card"><span>Mastery estimate</span><strong id="posteriorMean">0.500</strong></div>
+            <div class="metric-card"><span>Uncertainty</span><strong id="posteriorSd">0.289</strong></div>
+            <div class="metric-card"><span>Evidence mass</span><strong id="evidenceMass">2.00</strong></div>
+          </div>
+          <div class="panel">
+            <div class="panel-heading-row">
+              <div><h2>Belief distribution</h2><p class="muted small">Where the model thinks true mastery could plausibly be.</p></div>
+              <span id="betaLabel" class="mono small">Beta(1.00, 1.00)</span>
+            </div>
+            <svg id="betaChart" viewBox="0 0 680 230" class="chart" aria-label="Beta posterior distribution"></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="time">
+      <div class="two-col">
+        <div class="panel">
+          <h2>Let time pass</h2>
+          <p class="muted">Time does not have to mean the learner forgot everything. It can mean we become less certain about old evidence.</p>
+          <label class="field">Days without new evidence <span id="daysLabel" class="mono">7</span>
+            <input id="daysRange" type="range" min="0" max="60" step="1" value="7" />
+          </label>
+          <label class="field">Persistence ρ <span id="rhoLabel" class="mono">0.96</span>
+            <input id="rhoRange" type="range" min="0.75" max="1" step="0.01" value="0.96" />
+          </label>
+          <button id="advanceTimeBtn" class="btn btn-secondary full" type="button">Advance time</button>
+          <div class="research-only hidden formula-box">
+            <div>x<sub>t+1</sub> = ρ<sup>Δt</sup>x<sub>t</sub></div>
+            <div>α⁻ = α₀ + d(Δt)(α−α₀)</div>
+            <div>β⁻ = β₀ + d(Δt)(β−β₀)</div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Trajectory over time</h2>
+          <p class="muted small">Posterior mastery and dynamic latent mastery are shown separately.</p>
+          <svg id="traceChart" viewBox="0 0 680 280" class="chart" aria-label="Knowledge trajectory"></svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="hierarchy">
+      <div class="two-col">
+        <div class="panel">
+          <h2>Borrow strength from the population</h2>
+          <p class="muted">When a learner has little data, a hierarchical model can borrow information from similar learners instead of pretending every learner starts from scratch.</p>
+          <label class="field">Population average <span id="populationLabel" class="mono">0.62</span>
+            <input id="populationRange" type="range" min="0.05" max="0.95" step="0.01" value="0.62" />
+          </label>
+          <label class="field">Pooling strength <span id="poolingLabel" class="mono">0.35</span>
+            <input id="poolingRange" type="range" min="0" max="1" step="0.05" value="0.35" />
+          </label>
+          <div class="callout">Strong pooling matters most when learner-specific evidence is sparse. As the learner accumulates data, the local estimate increasingly dominates.</div>
+        </div>
+        <div class="stack">
+          <div class="metric-grid">
+            <div class="metric-card"><span>Local</span><strong id="localEstimate">0.500</strong></div>
+            <div class="metric-card"><span>Population</span><strong id="populationEstimate">0.620</strong></div>
+            <div class="metric-card"><span>Pooled</span><strong id="pooledEstimate">0.542</strong></div>
+          </div>
+          <div class="panel"><h2>Shrinkage view</h2><svg id="poolChart" viewBox="0 0 680 230" class="chart" aria-label="Partial pooling visualization"></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="teacher">
+      <div class="two-col">
+        <div class="panel">
+          <h2>Model teacher state separately</h2>
+          <p class="muted">Teacher knowledge or instructional quality can be treated as a dynamic latent state rather than a fixed nuisance variable.</p>
+          <label class="field">Observed teacher event
+            <select id="teacherEventSelect" class="select-input">
+              <option value="1.0">Strong coaching response</option>
+              <option value="0.8">Strong lesson implementation</option>
+              <option value="0.6">Accurate formative assessment</option>
+              <option value="-0.7">Weak implementation</option>
+            </select>
+          </label>
+          <label class="field">Teacher learning rate ηᵀ <span id="teacherRateLabel" class="mono">0.30</span>
+            <input id="teacherRateRange" type="range" min="0" max="0.8" step="0.05" value="0.30" />
+          </label>
+          <label class="field">Student coupling λ <span id="couplingLabel" class="mono">0.18</span>
+            <input id="couplingRange" type="range" min="0" max="0.8" step="0.02" value="0.18" />
+          </label>
+          <button id="updateTeacherBtn" class="btn btn-primary full" type="button">Update teacher state</button>
+        </div>
+        <div class="stack">
+          <div class="metric-grid">
+            <div class="metric-card"><span>Teacher latent state ψ</span><strong id="psiValue">0.000</strong></div>
+            <div class="metric-card"><span>Teacher state probability</span><strong id="psiProbability">0.500</strong></div>
+            <div class="metric-card"><span>Student transition lift</span><strong id="studentLift">0.000</strong></div>
+          </div>
+          <div class="panel"><h2>Teacher–student coupling</h2><p class="muted">The teacher effect changes the learner's transition dynamics, not the learner's observed answer directly. That separation makes the model easier to interpret.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="decision">
+      <div class="two-col">
+        <div class="panel">
+          <h2>Choose the next learning experience</h2>
+          <p class="muted">The best next activity can balance learning, uncertainty reduction, review need, and engagement.</p>
+          <label class="field">Learning gain <span id="wLearnLabel" class="mono">0.40</span><input id="wLearnRange" type="range" min="0" max="1" step="0.05" value="0.40" /></label>
+          <label class="field">Information gain <span id="wInfoLabel" class="mono">0.30</span><input id="wInfoRange" type="range" min="0" max="1" step="0.05" value="0.30" /></label>
+          <label class="field">Review need <span id="wReviewLabel" class="mono">0.20</span><input id="wReviewRange" type="range" min="0" max="1" step="0.05" value="0.20" /></label>
+          <label class="field">Engagement relevance <span id="wEngagementLabel" class="mono">0.10</span><input id="wEngagementRange" type="range" min="0" max="1" step="0.05" value="0.10" /></label>
+        </div>
+        <div class="panel no-pad">
+          <div class="panel-section"><h2>Ranked activities</h2><p class="muted small">These update automatically as the learner state changes.</p></div>
+          <div id="recommendationList" class="recommendation-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="math">
+      <div class="two-col">
+        <div class="panel"><h2>Local conjugate update</h2><div class="formula-large">θ ~ Beta(α, β)<br>Y | θ ~ Bernoulli(θ)<br><br>α′ = α + wy<br>β′ = β + w(1−y)<br><br>E[θ] = α/(α+β)<br>Var(θ) = αβ/[(α+β)²(α+β+1)]</div></div>
+        <div class="panel"><h2>Dynamic hierarchical extension</h2><div class="formula-large">xₜ₊₁ = ρxₜ + ηEₜ + λψₜ + εₜ<br><br>θₜ = logistic(xₜ)<br><br>ψₜ₊₁ = ρᵀψₜ + ηᵀAₜ + ξₜ<br><br>S(q) = λL·E[Δθ|q] + λI·IG(q)<br>+ λR·Review(q) + λE·Engagement(q)</div></div>
+      </div>
+      <div class="panel state-panel"><h2>Current model state</h2><pre id="stateInspector"></pre></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
