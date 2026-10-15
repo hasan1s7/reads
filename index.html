@@ -3,225 +3,1033 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>READS Knowledge Tracing Studio</title>
-  <meta name="description" content="Interactive dashboard for Bayesian and dynamic knowledge tracing." />
+
+  <title>READS Semantic Learning Model</title>
+
+  <meta
+    name="description"
+    content="Interactive READS Lab prototype linking curriculum semantic networks, teacher-enacted semantic networks, and latent student knowledge."
+  />
+
   <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .graph-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .graph-card h3 {
+      font-size: 15px;
+      margin: 0 0 4px;
+    }
+
+    .graph-card .stage {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .network {
+      width: 100%;
+      height: auto;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .edge-toolbar {
+      display: grid;
+      grid-template-columns:
+        minmax(0, 1.25fr)
+        repeat(2, minmax(160px, 0.5fr));
+      gap: 12px;
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .explain-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: var(--panel);
+    }
+
+    .explain-card h3 {
+      font-size: 16px;
+      margin: 0 0 7px;
+    }
+
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .dimension {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--panel-soft);
+    }
+
+    .dimension strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .dimension span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dimension-value {
+      font-size: 22px !important;
+      font-weight: 750;
+      color: var(--text) !important;
+      margin-top: 5px;
+      display: block;
+    }
+
+    .source-note {
+      border-left: 3px solid var(--series-2);
+      padding-left: 12px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .compact-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .compact-table th,
+    .compact-table td {
+      text-align: left;
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .compact-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .equation {
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace;
+
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+
+      padding: 14px;
+
+      line-height: 1.8;
+      font-size: 13px;
+    }
+
+    .research-banner {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .research-banner strong {
+      font-size: 14px;
+    }
+
+    .research-banner span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .pipeline,
+      .edge-toolbar,
+      .explain-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dimension-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dimension-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
+
   <main class="app-shell">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
     <header class="topbar">
+
       <div>
-        <p class="eyebrow">READS LAB</p>
-        <h1>Knowledge Tracing Studio</h1>
-        <p class="subhead">Explore how evidence, time, hierarchical pooling, and teacher effects change what the model believes about a learner.</p>
+
+        <p class="eyebrow">
+          READS LAB · MODEL PROTOTYPE
+        </p>
+
+        <h1>
+          From curriculum to teacher talk to student knowledge
+        </h1>
+
+        <p class="subhead">
+          A three-graph Bayesian model of semantic learning.
+          The curriculum defines opportunities to learn,
+          teacher talk instantiates a subset of those relations,
+          and student knowledge remains latent until evidence
+          updates our belief about each relation.
+        </p>
+
       </div>
+
       <div class="topbar-actions">
-        <button id="researchModeBtn" class="btn btn-secondary" type="button">Research mode: off</button>
-        <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+
+        <button
+          id="resetBtn"
+          class="btn btn-secondary"
+          type="button"
+        >
+          Reset demo
+        </button>
+
       </div>
+
     </header>
 
-    <section class="hero-card panel">
+
+    <!-- =====================================================
+         SOURCE / MODEL TRANSPARENCY BANNER
+         ===================================================== -->
+
+    <section class="panel research-banner">
+
       <div>
-        <label class="label" for="conceptInput">Current concept</label>
-        <input id="conceptInput" class="text-input concept-input" value="Quadratic equations" />
-        <div class="preset-row">
-          <button class="chip preset" data-concept="Quadratic equations" type="button">Math</button>
-          <button class="chip preset" data-concept="Cellular respiration" type="button">Biology</button>
-          <button class="chip preset" data-concept="Linear regression" type="button">Statistics</button>
-          <button class="chip preset" data-concept="Historical chronology" type="button">History</button>
-        </div>
+
+        <strong>
+          What is empirical vs. proposed?
+        </strong>
+
+        <span>
+          Relation examples and the teacher-network framework
+          come from the READS materials.
+
+          The edge-level Bayesian student model and numeric
+          demo strengths below are proposed / synthetic.
+        </span>
+
       </div>
-      <div class="belief-card">
-        <p class="muted small">Model's current belief</p>
-        <div class="belief-line">
-          <span id="masteryPercent" class="big-number">50%</span>
-          <span id="confidenceLabel" class="muted">low confidence</span>
-        </div>
-        <div class="progress"><div id="masteryBar" class="progress-fill" style="width:50%"></div></div>
-      </div>
+
+      <span class="status-pill">
+        transparent prototype
+      </span>
+
     </section>
 
-    <nav class="tabs" aria-label="Knowledge tracing modules">
-      <button class="tab active" data-tab="evidence" type="button">1 · Evidence</button>
-      <button class="tab" data-tab="time" type="button">2 · Time</button>
-      <button class="tab" data-tab="hierarchy" type="button">3 · Hierarchy</button>
-      <button class="tab" data-tab="teacher" type="button">4 · Teacher effect</button>
-      <button class="tab" data-tab="decision" type="button">5 · Next activity</button>
-      <button class="tab" data-tab="math" type="button">Math</button>
+
+    <!-- =====================================================
+         THREE-GRAPH ARCHITECTURE
+         ===================================================== -->
+
+    <section
+      class="pipeline"
+      aria-label="Three graph learning pipeline"
+    >
+
+      <!-- CURRICULUM GRAPH -->
+
+      <article class="graph-card">
+
+        <div class="stage">
+          1 · Opportunity
+        </div>
+
+        <h3>
+          Curriculum graph
+        </h3>
+
+        <p class="muted small">
+          What relations are available in the instructional
+          environment?
+        </p>
+
+        <svg
+          id="curriculumGraph"
+          viewBox="0 0 360 260"
+          class="network"
+          aria-label="Curriculum opportunity graph"
+        ></svg>
+
+      </article>
+
+
+      <!-- TEACHER GRAPH -->
+
+      <article class="graph-card">
+
+        <div class="stage">
+          2 · Enactment
+        </div>
+
+        <h3>
+          Teacher graph
+        </h3>
+
+        <p class="muted small">
+          Which relations are actually instantiated and
+          repeated in classroom talk?
+        </p>
+
+        <svg
+          id="teacherGraph"
+          viewBox="0 0 360 260"
+          class="network"
+          aria-label="Teacher enacted graph"
+        ></svg>
+
+      </article>
+
+
+      <!-- STUDENT GRAPH -->
+
+      <article class="graph-card">
+
+        <div class="stage">
+          3 · Latent state
+        </div>
+
+        <h3>
+          Student graph
+        </h3>
+
+        <p class="muted small">
+          What is the posterior probability that the learner
+          has each relation?
+        </p>
+
+        <svg
+          id="studentGraph"
+          viewBox="0 0 360 260"
+          class="network"
+          aria-label="Latent student knowledge graph"
+        ></svg>
+
+      </article>
+
+    </section>
+
+
+    <!-- =====================================================
+         NAVIGATION
+         ===================================================== -->
+
+    <nav
+      class="tabs"
+      aria-label="READS model modules"
+    >
+
+      <button
+        class="tab active"
+        data-tab="edge"
+        type="button"
+      >
+        Selected relation
+      </button>
+
+      <button
+        class="tab"
+        data-tab="teacher"
+        type="button"
+      >
+        Teacher network
+      </button>
+
+      <button
+        class="tab"
+        data-tab="student"
+        type="button"
+      >
+        Student evidence
+      </button>
+
+      <button
+        class="tab"
+        data-tab="inference"
+        type="button"
+      >
+        Inference
+      </button>
+
+      <button
+        class="tab"
+        data-tab="explain"
+        type="button"
+      >
+        Full explanation
+      </button>
+
     </nav>
 
-    <section class="tab-panel active" data-panel="evidence">
-      <div class="two-col">
-        <div class="panel">
-          <h2>Add one piece of learner evidence</h2>
-          <p class="muted">A correct free-response answer should usually count more than a correct multiple-choice guess.</p>
 
-          <label class="label">How did the learner respond?</label>
-          <select id="taskSelect" class="select-input">
-            <option value="mc">Multiple choice</option>
-            <option value="recognition">Recognition</option>
-            <option value="short" selected>Short-answer retrieval</option>
-            <option value="recall">Extended recall</option>
-            <option value="guided">Guided solution</option>
-            <option value="free">Free response / production</option>
-          </select>
+    <!-- =====================================================
+         TAB 1
+         SELECTED RELATION
+         ===================================================== -->
+
+    <section
+      class="tab-panel active"
+      data-panel="edge"
+    >
+
+      <div class="panel">
+
+        <div class="panel-heading-row">
+
+          <div>
+
+            <h2>
+              Choose one semantic relation to trace through
+              all three graphs
+            </h2>
+
+            <p class="muted small">
+              The same edge is highlighted in curriculum
+              opportunity, teacher enactment, and student
+              posterior knowledge.
+            </p>
+
+          </div>
+
+          <span
+            id="selectedRelationPill"
+            class="status-pill"
+          >
+            defines
+          </span>
+
+        </div>
+
+
+        <div class="edge-toolbar">
+
+          <!-- SELECT RELATION -->
+
+          <label class="field">
+
+            Relation
+
+            <select
+              id="edgeSelect"
+              class="select-input"
+            ></select>
+
+          </label>
+
+
+          <!-- CURRICULUM -->
+
+          <label class="field">
+
+            Curriculum availability
+
+            <span
+              id="curriculumStrengthLabel"
+              class="mono"
+            >
+              0.82
+            </span>
+
+            <input
+              id="curriculumStrengthRange"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.82"
+            />
+
+          </label>
+
+
+          <!-- EXTERNAL RELATION PRIOR -->
+
+          <label class="field">
+
+            External relational prior
+
+            <span
+              id="externalStrengthLabel"
+              class="mono"
+            >
+              0.58
+            </span>
+
+            <input
+              id="externalStrengthRange"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.58"
+            />
+
+          </label>
+
+        </div>
+
+
+        <div
+          id="edgeMeaningBox"
+          class="callout"
+        ></div>
+
+      </div>
+
+
+      <!-- SELECTED RELATION SUMMARY -->
+
+      <div
+        class="metric-grid"
+        style="margin-top: 16px"
+      >
+
+        <div class="metric-card">
+
+          <span>
+            Curriculum opportunity
+          </span>
+
+          <strong id="curriculumMetric">
+            0.820
+          </strong>
+
+        </div>
+
+
+        <div class="metric-card">
+
+          <span>
+            Teacher mentions
+          </span>
+
+          <strong id="teacherMentionsMetric">
+            3
+          </strong>
+
+        </div>
+
+
+        <div class="metric-card">
+
+          <span>
+            Student posterior
+          </span>
+
+          <strong id="studentPosteriorMetric">
+            0.500
+          </strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         TAB 2
+         TEACHER NETWORK
+         ===================================================== -->
+
+    <section
+      class="tab-panel"
+      data-panel="teacher"
+    >
+
+      <div class="two-col">
+
+        <div class="panel">
+
+          <h2>
+            Teacher enactment is an exposure process
+          </h2>
+
+          <p class="muted">
+            The teacher-talk work treats each utterance as a
+            typed semantic link.
+
+            Repetition becomes edge weight; breadth and
+            structure come from the network as a whole.
+          </p>
+
+
+          <!-- MENTION COUNT -->
+
+          <label class="field">
+
+            Selected edge mention count
+
+            <span
+              id="teacherMentionsLabel"
+              class="mono"
+            >
+              3
+            </span>
+
+            <input
+              id="teacherMentionsRange"
+              type="range"
+              min="0"
+              max="12"
+              step="1"
+              value="3"
+            />
+
+          </label>
+
+
+          <button
+            id="addMentionBtn"
+            class="btn btn-primary full"
+            type="button"
+          >
+            Add one teacher mention
+          </button>
+
+
+          <div class="callout">
+
+            This demo treats more mentions as stronger
+            exposure, but it does
+
+            <strong>
+              not
+            </strong>
+
+            assume repetition is always better.
+
+            The READS materials explicitly leave open whether
+            repeated links strengthen learning or crowd out
+            relational variety.
+
+          </div>
+
+        </div>
+
+
+        <div class="stack">
+
+          <!-- RICHNESS DIMENSIONS -->
+
+          <div class="panel">
+
+            <h2>
+              Working “richness” view
+            </h2>
+
+            <p class="muted small">
+              These five dimensions come from the
+              teacher-network framework.
+
+              The numeric summaries here are illustrative
+              operationalizations, not validated scales.
+            </p>
+
+
+            <div class="dimension-grid">
+
+              <div class="dimension">
+
+                <strong>
+                  Size
+                </strong>
+
+                <span>
+                  many linked ideas
+                </span>
+
+                <span
+                  id="richSize"
+                  class="dimension-value"
+                >
+                  0.00
+                </span>
+
+              </div>
+
+
+              <div class="dimension">
+
+                <strong>
+                  Variety
+                </strong>
+
+                <span>
+                  different relation types
+                </span>
+
+                <span
+                  id="richVariety"
+                  class="dimension-value"
+                >
+                  0.00
+                </span>
+
+              </div>
+
+
+              <div class="dimension">
+
+                <strong>
+                  Repetition
+                </strong>
+
+                <span>
+                  same links revisited
+                </span>
+
+                <span
+                  id="richRepetition"
+                  class="dimension-value"
+                >
+                  0.00
+                </span>
+
+              </div>
+
+
+              <div class="dimension">
+
+                <strong>
+                  Web
+                </strong>
+
+                <span>
+                  neighbors linked together
+                </span>
+
+                <span
+                  id="richWeb"
+                  class="dimension-value"
+                >
+                  0.00
+                </span>
+
+              </div>
+
+
+              <div class="dimension">
+
+                <strong>
+                  Reach
+                </strong>
+
+                <span>
+                  links unlock other words
+                </span>
+
+                <span
+                  id="richReach"
+                  class="dimension-value"
+                >
+                  0.00
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- TEACHER SUMMARY -->
+
+          <div class="panel">
+
+            <h2>
+              Teacher graph summary
+            </h2>
+
+            <div
+              id="teacherSummary"
+              class="muted"
+            ></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         TAB 3
+         STUDENT EVIDENCE
+         ===================================================== -->
+
+    <section
+      class="tab-panel"
+      data-panel="student"
+    >
+
+      <div class="two-col">
+
+        <!-- INPUT PANEL -->
+
+        <div class="panel">
+
+          <h2>
+            Add student evidence about the selected relation
+          </h2>
+
+          <p class="muted">
+            The student graph is latent.
+
+            Assessments contribute weighted evidence about
+            whether a semantic relation is actually represented
+            by the learner.
+          </p>
+
+
+          <!-- RESPONSE TYPE -->
+
+          <label class="field">
+
+            Evidence type
+
+            <select
+              id="responseTypeSelect"
+              class="select-input"
+            >
+
+              <option value="recognition">
+                Recognition
+              </option>
+
+              <option
+                value="short"
+                selected
+              >
+                Short explanation
+              </option>
+
+              <option value="explanation">
+                Explain the relation
+              </option>
+
+              <option value="transfer">
+                Transfer / apply in a new context
+              </option>
+
+            </select>
+
+          </label>
+
 
           <div class="field-grid">
-            <label class="field">Result
-              <select id="resultSelect" class="select-input">
-                <option value="1" selected>Correct</option>
-                <option value="0">Incorrect</option>
+
+            <!-- CORRECTNESS -->
+
+            <label class="field">
+
+              Result
+
+              <select
+                id="resultSelect"
+                class="select-input"
+              >
+
+                <option
+                  value="1"
+                  selected
+                >
+                  Correct / demonstrated
+                </option>
+
+                <option value="0">
+                  Incorrect / not demonstrated
+                </option>
+
               </select>
+
             </label>
-            <label class="field">Hints used
-              <select id="hintsSelect" class="select-input">
-                <option value="0" selected>None</option>
-                <option value="1">One</option>
-                <option value="2">Several</option>
+
+
+            <!-- HINTS -->
+
+            <label class="field">
+
+              Hints used
+
+              <select
+                id="hintsSelect"
+                class="select-input"
+              >
+
+                <option
+                  value="0"
+                  selected
+                >
+                  None
+                </option>
+
+                <option value="1">
+                  One
+                </option>
+
+                <option value="2">
+                  Several
+                </option>
+
               </select>
+
             </label>
+
           </div>
 
-          <label class="field">Difficulty <span id="difficultyLabel" class="mono">0.50</span>
-            <input id="difficultyRange" type="range" min="0" max="1" step="0.05" value="0.5" />
+
+          <!-- DIFFICULTY -->
+
+          <label class="field">
+
+            Task difficulty
+
+            <span
+              id="difficultyLabel"
+              class="mono"
+            >
+              0.50
+            </span>
+
+            <input
+              id="difficultyRange"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.50"
+            />
+
           </label>
 
-          <button id="applyEvidenceBtn" class="btn btn-primary full" type="button">Apply evidence</button>
-          <div id="explanationBox" class="callout">No evidence has been added yet. Try one observation and the model will explain what changed.</div>
 
-          <div class="research-only hidden formula-box">
-            <div>w = w<sub>task</sub> · w<sub>hint</sub> · w<sub>difficulty</sub></div>
-            <div>α′ = α + wy</div>
-            <div>β′ = β + w(1−y)</div>
+          <button
+            id="applyStudentEvidenceBtn"
+            class="btn btn-primary full"
+            type="button"
+          >
+            Update student posterior
+          </button>
+
+
+          <button
+            id="clearStudentEvidenceBtn"
+            class="btn btn-secondary full"
+            type="button"
+          >
+            Clear student evidence for this edge
+          </button>
+
+
+          <div
+            id="studentExplanation"
+            class="callout"
+          >
+            No direct student evidence has been added to this
+            relation yet.
           </div>
+
         </div>
 
+
+        <!-- POSTERIOR OUTPUT -->
+
         <div class="stack">
+
           <div class="metric-grid">
-            <div class="metric-card"><span>Mastery estimate</span><strong id="posteriorMean">0.500</strong></div>
-            <div class="metric-card"><span>Uncertainty</span><strong id="posteriorSd">0.289</strong></div>
-            <div class="metric-card"><span>Evidence mass</span><strong id="evidenceMass">2.00</strong></div>
-          </div>
-          <div class="panel">
-            <div class="panel-heading-row">
-              <div><h2>Belief distribution</h2><p class="muted small">Where the model thinks true mastery could plausibly be.</p></div>
-              <span id="betaLabel" class="mono small">Beta(1.00, 1.00)</span>
+
+            <div class="metric-card">
+
+              <span>
+                Prior after context
+              </span>
+
+              <strong id="priorMean">
+                0.500
+              </strong>
+
             </div>
-            <svg id="betaChart" viewBox="0 0 680 230" class="chart" aria-label="Beta posterior distribution"></svg>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <section class="tab-panel" data-panel="time">
-      <div class="two-col">
-        <div class="panel">
-          <h2>Let time pass</h2>
-          <p class="muted">Time does not have to mean the learner forgot everything. It can mean we become less certain about old evidence.</p>
-          <label class="field">Days without new evidence <span id="daysLabel" class="mono">7</span>
-            <input id="daysRange" type="range" min="0" max="60" step="1" value="7" />
-          </label>
-          <label class="field">Persistence ρ <span id="rhoLabel" class="mono">0.96</span>
-            <input id="rhoRange" type="range" min="0.75" max="1" step="0.01" value="0.96" />
-          </label>
-          <button id="advanceTimeBtn" class="btn btn-secondary full" type="button">Advance time</button>
-          <div class="research-only hidden formula-box">
-            <div>x<sub>t+1</sub> = ρ<sup>Δt</sup>x<sub>t</sub></div>
-            <div>α⁻ = α₀ + d(Δt)(α−α₀)</div>
-            <div>β⁻ = β₀ + d(Δt)(β−β₀)</div>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Trajectory over time</h2>
-          <p class="muted small">Posterior mastery and dynamic latent mastery are shown separately.</p>
-          <svg id="traceChart" viewBox="0 0 680 280" class="chart" aria-label="Knowledge trajectory"></svg>
-        </div>
-      </div>
-    </section>
 
-    <section class="tab-panel" data-panel="hierarchy">
-      <div class="two-col">
-        <div class="panel">
-          <h2>Borrow strength from the population</h2>
-          <p class="muted">When a learner has little data, a hierarchical model can borrow information from similar learners instead of pretending every learner starts from scratch.</p>
-          <label class="field">Population average <span id="populationLabel" class="mono">0.62</span>
-            <input id="populationRange" type="range" min="0.05" max="0.95" step="0.01" value="0.62" />
-          </label>
-          <label class="field">Pooling strength <span id="poolingLabel" class="mono">0.35</span>
-            <input id="poolingRange" type="range" min="0" max="1" step="0.05" value="0.35" />
-          </label>
-          <div class="callout">Strong pooling matters most when learner-specific evidence is sparse. As the learner accumulates data, the local estimate increasingly dominates.</div>
-        </div>
-        <div class="stack">
-          <div class="metric-grid">
-            <div class="metric-card"><span>Local</span><strong id="localEstimate">0.500</strong></div>
-            <div class="metric-card"><span>Population</span><strong id="populationEstimate">0.620</strong></div>
-            <div class="metric-card"><span>Pooled</span><strong id="pooledEstimate">0.542</strong></div>
-          </div>
-          <div class="panel"><h2>Shrinkage view</h2><svg id="poolChart" viewBox="0 0 680 230" class="chart" aria-label="Partial pooling visualization"></svg></div>
-        </div>
-      </div>
-    </section>
+            <div class="metric-card">
 
-    <section class="tab-panel" data-panel="teacher">
-      <div class="two-col">
-        <div class="panel">
-          <h2>Model teacher state separately</h2>
-          <p class="muted">Teacher knowledge or instructional quality can be treated as a dynamic latent state rather than a fixed nuisance variable.</p>
-          <label class="field">Observed teacher event
-            <select id="teacherEventSelect" class="select-input">
-              <option value="1.0">Strong coaching response</option>
-              <option value="0.8">Strong lesson implementation</option>
-              <option value="0.6">Accurate formative assessment</option>
-              <option value="-0.7">Weak implementation</option>
-            </select>
-          </label>
-          <label class="field">Teacher learning rate ηᵀ <span id="teacherRateLabel" class="mono">0.30</span>
-            <input id="teacherRateRange" type="range" min="0" max="0.8" step="0.05" value="0.30" />
-          </label>
-          <label class="field">Student coupling λ <span id="couplingLabel" class="mono">0.18</span>
-            <input id="couplingRange" type="range" min="0" max="0.8" step="0.02" value="0.18" />
-          </label>
-          <button id="updateTeacherBtn" class="btn btn-primary full" type="button">Update teacher state</button>
-        </div>
-        <div class="stack">
-          <div class="metric-grid">
-            <div class="metric-card"><span>Teacher latent state ψ</span><strong id="psiValue">0.000</strong></div>
-            <div class="metric-card"><span>Teacher state probability</span><strong id="psiProbability">0.500</strong></div>
-            <div class="metric-card"><span>Student transition lift</span><strong id="studentLift">0.000</strong></div>
-          </div>
-          <div class="panel"><h2>Teacher–student coupling</h2><p class="muted">The teacher effect changes the learner's transition dynamics, not the learner's observed answer directly. That separation makes the model easier to interpret.</p></div>
-        </div>
-      </div>
-    </section>
+              <span>
+                Posterior mean
+              </span>
 
-    <section class="tab-panel" data-panel="decision">
-      <div class="two-col">
-        <div class="panel">
-          <h2>Choose the next learning experience</h2>
-          <p class="muted">The best next activity can balance learning, uncertainty reduction, review need, and engagement.</p>
-          <label class="field">Learning gain <span id="wLearnLabel" class="mono">0.40</span><input id="wLearnRange" type="range" min="0" max="1" step="0.05" value="0.40" /></label>
-          <label class="field">Information gain <span id="wInfoLabel" class="mono">0.30</span><input id="wInfoRange" type="range" min="0" max="1" step="0.05" value="0.30" /></label>
-          <label class="field">Review need <span id="wReviewLabel" class="mono">0.20</span><input id="wReviewRange" type="range" min="0" max="1" step="0.05" value="0.20" /></label>
-          <label class="field">Engagement relevance <span id="wEngagementLabel" class="mono">0.10</span><input id="wEngagementRange" type="range" min="0" max="1" step="0.05" value="0.10" /></label>
-        </div>
-        <div class="panel no-pad">
-          <div class="panel-section"><h2>Ranked activities</h2><p class="muted small">These update automatically as the learner state changes.</p></div>
-          <div id="recommendationList" class="recommendation-list"></div>
-        </div>
-      </div>
-    </section>
+              <strong id="posteriorMean">
+                0.500
+              </strong>
 
-    <section class="tab-panel" data-panel="math">
-      <div class="two-col">
-        <div class="panel"><h2>Local conjugate update</h2><div class="formula-large">θ ~ Beta(α, β)<br>Y | θ ~ Bernoulli(θ)<br><br>α′ = α + wy<br>β′ = β + w(1−y)<br><br>E[θ] = α/(α+β)<br>Var(θ) = αβ/[(α+β)²(α+β+1)]</div></div>
-        <div class="panel"><h2>Dynamic hierarchical extension</h2><div class="formula-large">xₜ₊₁ = ρxₜ + ηEₜ + λψₜ + εₜ<br><br>θₜ = logistic(xₜ)<br><br>ψₜ₊₁ = ρᵀψₜ + ηᵀAₜ + ξₜ<br><br>S(q) = λL·E[Δθ|q] + λI·IG(q)<br>+ λR·Review(q) + λE·Engagement(q)</div></div>
-      </div>
-      <div class="panel state-panel"><h2>Current model state</h2><pre id="stateInspector"></pre></div>
-    </section>
-  </main>
+            </div>
 
-  <script type="module" src="js/app.js"></script>
-</body>
-</html>
+
+            <div class="metric-card">
+
+              <span>
+                Posterior SD
+              </span>
+
+              <strong id="posteriorSd">
+                0.200
+              </strong>
+
+            </div>
+
+     
