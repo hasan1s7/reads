@@ -7,354 +7,457 @@ import {
 
 /* ============================================================
    RELATION TAXONOMY
-
-   These relation types are based on the READS teacher-talk
-   framework.
-
-   The dashboard does NOT treat every relation as equivalent.
-   Relation type can eventually become a hierarchical effect
-   in the full statistical model.
    ============================================================ */
 
 export const RELATIONS = [
 
   {
-    id: 'defines',
 
-    label: 'defines',
+    id:
+      'defines',
 
-    description:
-      'Gives a meaning, definition, or paraphrase for a concept.',
-  },
-
-  {
-    id: 'category_of',
-
-    label: 'category of',
+    label:
+      'defines',
 
     description:
-      'Places the concept into a category or identifies its grammatical / conceptual class.',
+      'Gives a meaning or paraphrase for a concept.',
+
+    color:
+      '#315ad8',
+
   },
 
-  {
-    id: 'morphologically_from',
 
-    label: 'morphologically from',
+  {
+
+    id:
+      'category_of',
+
+    label:
+      'category of',
 
     description:
-      'Connects a derived word to a base form, root, or affix.',
+      'Places the concept in a grammatical or conceptual class.',
+
+    color:
+      '#8b62c3',
+
   },
 
-  {
-    id: 'exemplifies',
 
-    label: 'exemplifies',
+  {
+
+    id:
+      'morphologically_from',
+
+    label:
+      'morphology',
 
     description:
-      'Connects an abstract concept to a concrete instance or example.',
+      'Connects a word to a base form, root, or affix.',
+
+    color:
+      '#b86b16',
+
   },
 
-  {
-    id: 'same_pattern_as',
 
-    label: 'same pattern as',
+  {
+
+    id:
+      'exemplifies',
+
+    label:
+      'exemplifies',
 
     description:
-      'Connects concepts that share a morphological, semantic, or instructional pattern.',
+      'Connects an abstract concept to a concrete instance.',
+
+    color:
+      '#2d8069',
+
   },
 
-  {
-    id: 'part_of',
 
-    label: 'part of',
+  {
+
+    id:
+      'same_pattern_as',
+
+    label:
+      'same pattern',
 
     description:
-      'Places one concept inside a larger conceptual or physical whole.',
+      'Links words that share an instructional or morphological pattern.',
+
+    color:
+      '#94710f',
+
   },
 
-  {
-    id: 'similar_to',
 
-    label: 'similar to',
+  {
+
+    id:
+      'part_of',
+
+    label:
+      'part of',
 
     description:
-      'Links concepts through analogy or semantic similarity.',
+      'Places a concept inside a larger whole.',
+
+    color:
+      '#8a5d42',
+
   },
 
-  {
-    id: 'contrasts_with',
 
-    label: 'contrasts with',
+  {
+
+    id:
+      'similar_to',
+
+    label:
+      'similar to',
+
+    description:
+      'Links concepts through analogy or similarity.',
+
+    color:
+      '#66709c',
+
+  },
+
+
+  {
+
+    id:
+      'contrasts_with',
+
+    label:
+      'contrasts',
 
     description:
       'Explicitly distinguishes or opposes two concepts.',
+
+    color:
+      '#a34d74',
+
   },
 
 ];
 
 
 /* ============================================================
-   DEMONSTRATION EDGES
+   DEMONSTRATION SEMANTIC EDGES
 
-   IMPORTANT:
+   Relation examples are grounded in the READS teacher-talk
+   materials.
 
-   The semantic examples are motivated by the READS
-   teacher-network materials.
-
-   The NUMERIC values are synthetic.
-
-   They are here so the statistical architecture can be
-   manipulated interactively.
-
-   These are not estimated coefficients or observed effect
-   sizes from the study.
+   Numeric strengths are synthetic demonstration values.
+   They are NOT fitted effect sizes.
    ============================================================ */
 
 export const DEMO_EDGES = [
 
   {
-    id: 'skeletal-defines-thin',
 
-    source: 'skeletal',
+    id:
+      'skeletal-defines-thin',
 
-    relation: 'defines',
+    source:
+      'skeletal',
 
-    target: 'thin',
+    relation:
+      'defines',
 
-    curriculum: 0.82,
+    target:
+      'thin',
 
-    external: 0.58,
+    curriculum:
+      0.82,
 
-    initialMentions: 3,
+    external:
+      0.58,
+
+    initialMentions:
+      3,
+
   },
 
 
   {
-    id: 'skeletal-category-adjective',
 
-    source: 'skeletal',
+    id:
+      'skeletal-category-adjective',
 
-    relation: 'category_of',
+    source:
+      'skeletal',
 
-    target: 'adjective',
+    relation:
+      'category_of',
 
-    curriculum: 0.76,
+    target:
+      'adjective',
 
-    external: 0.52,
+    curriculum:
+      0.76,
 
-    initialMentions: 3,
+    external:
+      0.52,
+
+    initialMentions:
+      3,
+
   },
 
 
   {
-    id: 'skeletal-exemplifies-legs',
 
-    source: 'skeletal',
+    id:
+      'skeletal-exemplifies-legs',
 
-    relation: 'exemplifies',
+    source:
+      'skeletal',
 
-    target: 'skeletal legs',
+    relation:
+      'exemplifies',
 
-    curriculum: 0.66,
+    target:
+      'skeletal legs',
 
-    external: 0.35,
+    curriculum:
+      0.66,
 
-    initialMentions: 2,
+    external:
+      0.35,
+
+    initialMentions:
+      2,
+
   },
 
 
   {
-    id: 'skeletal-morph-al',
 
-    source: 'skeletal',
+    id:
+      'skeletal-morph-al',
 
-    relation: 'morphologically_from',
+    source:
+      'skeletal',
 
-    target: '-al suffix',
+    relation:
+      'morphologically_from',
 
-    curriculum: 0.70,
+    target:
+      '-al suffix',
 
-    external: 0.62,
+    curriculum:
+      0.70,
 
-    initialMentions: 2,
+    external:
+      0.62,
+
+    initialMentions:
+      2,
+
   },
 
 
   {
-    id: 'skeletal-pattern-magical',
 
-    source: 'skeletal',
+    id:
+      'skeletal-pattern-magical',
 
-    relation: 'same_pattern_as',
+    source:
+      'skeletal',
 
-    target: 'magical',
+    relation:
+      'same_pattern_as',
 
-    curriculum: 0.52,
+    target:
+      'magical',
 
-    external: 0.47,
+    curriculum:
+      0.52,
 
-    initialMentions: 1,
+    external:
+      0.47,
+
+    initialMentions:
+      1,
+
   },
 
 
   {
-    id: 'skeletal-system-part-body',
 
-    source: 'skeletal system',
+    id:
+      'skeletal-system-part-body',
 
-    relation: 'part_of',
+    source:
+      'skeletal system',
 
-    target: 'body',
+    relation:
+      'part_of',
 
-    curriculum: 0.71,
+    target:
+      'body',
 
-    external: 0.68,
+    curriculum:
+      0.71,
 
-    initialMentions: 1,
+    external:
+      0.68,
+
+    initialMentions:
+      1,
+
   },
 
 
   {
-    id: 'magical-morph-magic',
 
-    source: 'magical',
+    id:
+      'magical-morph-magic',
 
-    relation: 'morphologically_from',
+    source:
+      'magical',
 
-    target: 'magic',
+    relation:
+      'morphologically_from',
 
-    curriculum: 0.49,
+    target:
+      'magic',
 
-    external: 0.67,
+    curriculum:
+      0.49,
 
-    initialMentions: 1,
+    external:
+      0.67,
+
+    initialMentions:
+      1,
+
   },
 
 
   {
-    id: 'system-part-skeletal',
 
-    source: 'skeletal system',
+    id:
+      'system-part-skeletal',
 
-    relation: 'part_of',
+    source:
+      'skeletal system',
 
-    target: 'system',
+    relation:
+      'part_of',
 
-    curriculum: 0.63,
+    target:
+      'system',
 
-    external: 0.55,
+    curriculum:
+      0.63,
 
-    initialMentions: 2,
+    external:
+      0.55,
+
+    initialMentions:
+      2,
+
   },
 
 ];
 
 
 /* ============================================================
-   STUDENT-EVIDENCE WEIGHTS
-
-   One central idea:
-
-   not every correct response should produce the same amount
-   of evidence.
-
-   Simply recognizing something is weaker evidence than
-   explaining it.
-
-   Explaining it is weaker than transferring the relation
-   successfully into a novel context.
-
-   These weights are synthetic and replaceable.
+   EVIDENCE WEIGHTS
    ============================================================ */
 
 export const RESPONSE_WEIGHTS = {
 
-  recognition: 0.55,
+  recognition:
+    0.55,
 
-  short: 0.90,
+  short:
+    0.90,
 
-  explanation: 1.15,
+  explanation:
+    1.15,
 
-  transfer: 1.40,
+  transfer:
+    1.40,
 
 };
 
 
 /* ============================================================
    DEFAULT MODEL PARAMETERS
-
-   These parameters define the interactive simulator.
-
-   They are NOT empirical estimates.
-
-   The ultimate statistical model would estimate parameters
-   like these using teacher / student data.
    ============================================================ */
 
 export const DEFAULT_PARAMS = {
 
   /*
-  How much curriculum opportunity affects the latent
-  student-edge prior.
+  Baseline log-odds for possessing a relation.
   */
-  curriculumWeight: 1.25,
+  intercept:
+    -1.15,
 
 
   /*
-  Contribution from an external semantic graph.
-
-  ConceptNet is one possible external source.
+  Contribution from the curriculum opportunity graph.
   */
-  externalWeight: 0.55,
+  curriculumWeight:
+    1.25,
 
 
   /*
-  Effect of direct teacher enactment / repetition.
+  Optional external relational knowledge contribution.
   */
-  teacherExposureWeight: 0.42,
+  externalWeight:
+    0.55,
 
 
   /*
-  Effect of the larger teacher-network structure.
+  Contribution from direct teacher enactment / repetition.
   */
-  teacherRichnessWeight: 0.60,
+  teacherExposureWeight:
+    0.42,
 
 
   /*
-  Determines how concentrated the contextual prior is.
-
-  Higher value =
-  stronger confidence before student evidence arrives.
+  Contribution from the larger teacher-network structure.
   */
-  priorConcentration: 3.5,
+  teacherRichnessWeight:
+    0.60,
 
 
   /*
-  Simplified partial pooling.
-
-  0:
-      edge is estimated entirely locally.
-
-  1:
-      edge is pulled completely to population mean.
-
-  In a true hierarchical Bayesian model this would emerge
-  from estimated variance parameters rather than being a
-  literal slider.
+  Controls prior certainty before student evidence.
   */
-  edgePooling: 0.35,
+  priorConcentration:
+    3.5,
 
 
   /*
-  Population-level mean probability for a semantic edge.
+  Simplified partial pooling strength.
   */
-  populationEdgeMean: 0.50,
+  edgePooling:
+    0.35,
+
+
+  /*
+  Population semantic-edge mean.
+  */
+  populationEdgeMean:
+    0.50,
 
 };
 
 
 /* ============================================================
-   INITIAL STATE
+   CREATE INITIAL STATE
    ============================================================ */
 
 export function createState() {
@@ -362,43 +465,31 @@ export function createState() {
   const edgeStates = {};
 
 
-  for (const edge of DEMO_EDGES) {
+  for (
+    const edge of DEMO_EDGES
+  ) {
 
-    edgeStates[edge.id] = {
+    edgeStates[
+      edge.id
+    ] = {
 
-      /*
-      Curriculum graph information.
-      */
       curriculum:
         edge.curriculum,
 
-
-      /*
-      Optional external semantic prior.
-      */
       external:
         edge.external,
 
-
-      /*
-      Teacher-enacted graph information.
-      */
       teacherMentions:
         edge.initialMentions,
 
+      positiveEvidence:
+        0,
 
-      /*
-      Direct learner evidence.
-      */
-      positiveEvidence: 0,
+      negativeEvidence:
+        0,
 
-      negativeEvidence: 0,
-
-
-      /*
-      Observation history.
-      */
-      history: [],
+      history:
+        [],
 
     };
 
@@ -410,15 +501,22 @@ export function createState() {
     selectedEdgeId:
       DEMO_EDGES[0].id,
 
-    edgeStates,
 
     /*
-    Simple event counter.
-
-    Eventually this can become real instructional time:
-    lesson number, day, unit, etc.
+    The currently visible network layer.
     */
-    time: 0,
+    stage:
+      'curriculum',
+
+
+    edgeStates,
+
+
+    /*
+    Counts interactions in the simulator.
+    */
+    eventIndex:
+      0,
 
   };
 
@@ -426,112 +524,116 @@ export function createState() {
 
 
 /* ============================================================
-   LOOKUP FUNCTIONS
+   LOOKUPS
    ============================================================ */
 
-export function edgeById(edgeId) {
+export function edgeById(
+  edgeId
+) {
 
-  return DEMO_EDGES.find(
-    (edge) =>
-      edge.id === edgeId
+  return (
+
+    DEMO_EDGES.find(
+      (edge) =>
+        edge.id ===
+        edgeId
+    )
+
+    ||
+
+    DEMO_EDGES[0]
+
   );
 
 }
 
 
-export function relationById(relationId) {
+export function relationById(
+  relationId
+) {
 
-  return RELATIONS.find(
-    (relation) =>
-      relation.id === relationId
+  return (
+
+    RELATIONS.find(
+      (relation) =>
+        relation.id ===
+        relationId
+    )
+
+    ||
+
+    RELATIONS[0]
+
   );
 
 }
 
 
 /* ============================================================
-   LOGIT UTILITY
+   TEACHER NETWORK METRICS
+
+   These are deliberately transparent demo operationalizations.
+
+   They are not validated scales.
+
+   The eventual research model should estimate or validate
+   these dimensions empirically.
    ============================================================ */
 
-export function logit(p) {
+export function teacherNetworkMetrics(
+  state
+) {
 
-  const q =
-    clamp(
-      p,
-      1e-6,
-      1 - 1e-6
-    );
-
-  return Math.log(
-    q /
-    (1 - q)
-  );
-
-}
-
-
-/* ============================================================
-   TEACHER NETWORK RICHNESS
-
-   The READS work motivates several possible dimensions of a
-   "rich" semantic network:
-
-   - size
-   - variety
-   - repetition
-   - web structure
-   - reach / generativity
-
-   The functions below are intentionally transparent
-   approximations.
-
-   They are NOT validated metrics.
-
-   Their purpose is to demonstrate how teacher-network
-   structure might enter a learner model.
-   ============================================================ */
-
-export function teacherRichness(state) {
-
-  /*
-  Only teacher-enacted edges count as active.
-  */
   const active =
+
     DEMO_EDGES.filter(
       (edge) =>
+
         state.edgeStates[
           edge.id
-        ].teacherMentions > 0
+        ].teacherMentions >
+
+        0
     );
 
 
-  const allNodes =
+  const nodes =
     new Set();
+
 
   const relationTypes =
     new Set();
 
 
-  let totalMentions = 0;
-
-  let nonTargetEdges = 0;
-
-  let generativeEdges = 0;
+  let totalMentions =
+    0;
 
 
-  for (const edge of active) {
+  let peripheralEdges =
+    0;
+
+
+  let generativeEdges =
+    0;
+
+
+  for (
+    const edge of active
+  ) {
 
     const mentions =
+
       state.edgeStates[
         edge.id
       ].teacherMentions;
 
 
-    allNodes.add(
+    nodes.add(
       edge.source
     );
 
-    allNodes.add(
+
+    nodes.add(
       edge.target
     );
 
@@ -546,95 +648,109 @@ export function teacherRichness(state) {
 
 
     /*
-    WEB STRUCTURE
-
-    If concepts surrounding the focal word are also connected
-    to other concepts, the network becomes less star-shaped.
-
-    This is a crude approximation of interrelatedness.
+    Rough "web" indicator:
+    is the graph more than a star around skeletal?
     */
+
     if (
-      edge.source !== 'skeletal' &&
-      edge.target !== 'skeletal'
+
+      edge.source !==
+      'skeletal'
+
+      &&
+
+      edge.target !==
+      'skeletal'
+
     ) {
 
-      nonTargetEdges += 1;
+      peripheralEdges +=
+        1;
 
     }
 
 
     /*
-    REACH / GENERATIVITY
-
-    Morphological and same-pattern links are treated here as
-    possible routes through which knowledge of one word can
-    help unlock another word.
-
-    Again: illustrative, not validated.
+    Rough generativity / reach indicator.
     */
+
     if (
+
       [
         'same_pattern_as',
         'morphologically_from',
       ].includes(
         edge.relation
       )
+
     ) {
 
-      generativeEdges += 1;
+      generativeEdges +=
+        1;
 
     }
 
   }
 
 
-  /* ----------------------------------------------------------
-     SIZE
-
-     Number of unique concepts represented.
-
-     Divisor is simply a normalization constant for this
-     small synthetic graph.
-     ---------------------------------------------------------- */
+  /*
+  Conceptual breadth.
+  */
 
   const size =
+
     clamp(
-      allNodes.size / 11,
+
+      nodes.size /
+      11,
+
       0,
+
       1
+
     );
 
 
-  /* ----------------------------------------------------------
-     VARIETY
-
-     Number of different relation types instantiated.
-     ---------------------------------------------------------- */
+  /*
+  Relation-type diversity.
+  */
 
   const variety =
+
     clamp(
-      relationTypes.size / 6,
+
+      relationTypes.size /
+      6,
+
       0,
+
       1
+
     );
 
 
-  /* ----------------------------------------------------------
-     REPETITION
-
-     Average repeated exposure per active semantic edge.
-     ---------------------------------------------------------- */
+  /*
+  Mean repeated exposure across active edges.
+  */
 
   const repetition =
+
     active.length
 
       ? clamp(
 
           (
+
             totalMentions /
-            active.length -
+            active.length
+
+            -
+
             1
-          ) / 3,
+
+          ) /
+
+          3,
 
           0,
 
@@ -645,22 +761,24 @@ export function teacherRichness(state) {
       : 0;
 
 
-  /* ----------------------------------------------------------
-     WEB
-
-     Rough measure of whether teacher talk creates links beyond
-     a single target-word-centered star.
-     ---------------------------------------------------------- */
+  /*
+  Interconnectedness outside the focal node.
+  */
 
   const web =
+
     active.length
 
       ? clamp(
 
           (
-            nonTargetEdges /
+
+            peripheralEdges /
             active.length
-          ) * 1.8,
+
+          ) *
+
+          1.8,
 
           0,
 
@@ -671,21 +789,24 @@ export function teacherRichness(state) {
       : 0;
 
 
-  /* ----------------------------------------------------------
-     REACH
-
-     Approximation of generative relational structure.
-     ---------------------------------------------------------- */
+  /*
+  Potential for one relation to unlock another.
+  */
 
   const reach =
+
     active.length
 
       ? clamp(
 
           (
+
             generativeEdges /
             active.length
-          ) * 2.2,
+
+          ) *
+
+          2.2,
 
           0,
 
@@ -696,24 +817,30 @@ export function teacherRichness(state) {
       : 0;
 
 
-  /* ----------------------------------------------------------
-     COMPOSITE
+  /*
+  Temporary composite used only in the prototype.
 
-     This is only for the interactive prototype.
-
-     In actual analysis, these dimensions should likely remain
-     separate or be reduced statistically using something such
-     as PCA / factor analysis / latent variable modeling.
-     ---------------------------------------------------------- */
+  A real analysis should probably preserve the components
+  separately or estimate a latent factor.
+  */
 
   const composite =
+
     (
+
       size +
+
       variety +
+
       repetition +
+
       web +
+
       reach
-    ) / 5;
+
+    ) /
+
+    5;
 
 
   return {
@@ -741,34 +868,18 @@ export function teacherRichness(state) {
 
 
 /* ============================================================
-   CONTEXTUAL PRIOR FOR A STUDENT EDGE
-
-   Core idea:
-
-   Curriculum network
-          ↓
-   teacher-enacted network
-          ↓
-   prior probability of student relation knowledge
-          ↓
-   direct student evidence
-          ↓
-   posterior
-
-
-   We define:
-
-       π_e
-
-   as the probability that semantic relation e is represented
-   in the learner BEFORE direct assessment evidence from the
-   learner is incorporated.
+   CONTEXTUAL PRIOR FOR ONE STUDENT RELATION
    ============================================================ */
 
 export function priorForEdge(
+
   state,
+
   edgeId,
-  params = DEFAULT_PARAMS
+
+  params =
+    DEFAULT_PARAMS
+
 ) {
 
   const edge =
@@ -779,31 +890,29 @@ export function priorForEdge(
 
   const local =
     state.edgeStates[
-      edgeId
+      edge.id
     ];
 
 
   const richness =
-    teacherRichness(
+    teacherNetworkMetrics(
       state
     );
 
 
-  /* ==========================================================
-     BASE SEMANTIC PRIOR
+  /* ----------------------------------------------------------
+     CURRICULUM + EXTERNAL SEMANTIC CONTEXT
 
-     logit(π_e) =
+     logit(pi_e)
 
-         intercept
+       = intercept
+       + beta_C * curriculum_e
+       + beta_X * external_e
+     ---------------------------------------------------------- */
 
-         + β_C * curriculum_e
+  const semanticLogit =
 
-         + β_X * external_e
-     ========================================================== */
-
-  const baseLogit =
-
-    -1.15
+    params.intercept
 
     +
 
@@ -816,27 +925,11 @@ export function priorForEdge(
     local.external;
 
 
-  /* ==========================================================
+  /* ----------------------------------------------------------
      TEACHER ENACTMENT
 
-     We use:
-
-         log(1 + mentions)
-
-     because we do not want raw repetition to have an
-     indefinitely linear effect.
-
-     Going from:
-
-         0 → 1 exposure
-
-     should matter more than:
-
-         10 → 11 exposures.
-
-     The richness term lets broader instructional structure
-     influence the edge prior as well.
-     ========================================================== */
+     log(1 + mentions) gives diminishing returns to repetition.
+     ---------------------------------------------------------- */
 
   const teacherShift =
 
@@ -851,54 +944,50 @@ export function priorForEdge(
     params.teacherRichnessWeight *
 
     (
-      richness.composite -
+      richness.composite
+
+      -
+
       0.5
     );
 
 
-  /* ==========================================================
-     CONVERT FROM LOGIT SCALE TO PROBABILITY
-     ========================================================== */
+  /* ----------------------------------------------------------
+     LOCAL EDGE PROBABILITY
+     ---------------------------------------------------------- */
 
-  const rawMean =
+  const localMean =
+
     sigmoid(
 
-      baseLogit +
+      semanticLogit
+
+      +
 
       teacherShift
 
     );
 
 
-  /* ==========================================================
+  /* ----------------------------------------------------------
      HIERARCHICAL PARTIAL POOLING
 
-     π_tilde_e =
+     pi_tilde_e
 
-         (1 - τ) π_e
-
-         +
-
-         τ μ_population
-
-
-     This protects sparse edges from extreme estimates.
-
-     Again, the slider is pedagogical.
-
-     A proper hierarchical model would estimate the
-     between-edge variance and allow the amount of shrinkage
-     to arise naturally.
-     ========================================================== */
+       = (1 - tau) * pi_e
+       + tau * mu_population
+     ---------------------------------------------------------- */
 
   const pooledMean =
 
     (
+
       1 -
       params.edgePooling
+
     ) *
 
-    rawMean
+    localMean
 
     +
 
@@ -907,20 +996,26 @@ export function priorForEdge(
     params.populationEdgeMean;
 
 
-  /* ==========================================================
-     PRIOR CONCENTRATION
+  const mean =
 
-     Teacher exposure slightly increases prior confidence.
+    clamp(
 
-     Importantly:
+      pooledMean,
 
-     teacher exposure DOES NOT count as direct student
-     evidence.
+      0.01,
 
-     Teacher behavior shapes the prior.
+      0.99
 
-     Student behavior updates the posterior.
-     ========================================================== */
+    );
+
+
+  /*
+  More teacher exposure modestly increases the concentration
+  of the contextual prior.
+
+  Teacher behavior still does NOT count as direct student
+  assessment evidence.
+  */
 
   const concentration =
 
@@ -933,71 +1028,44 @@ export function priorForEdge(
     local.teacherMentions;
 
 
-  const safeMean =
-    clamp(
-
-      pooledMean,
-
-      0.01,
-
-      0.99
-
-    );
-
-
-  /* ==========================================================
-     BETA PARAMETERIZATION
-
-     If:
-
-         θ ~ Beta(α, β)
-
-     then:
-
-         E[θ] = α / (α + β)
-
-     So given desired mean π and concentration κ:
-
-         α = κπ
-
-         β = κ(1 - π)
-     ========================================================== */
-
   return {
 
     edge,
 
-    mean:
-      safeMean,
-
-    concentration,
+    mean,
 
 
     alpha:
 
-      safeMean *
+      mean *
+
       concentration,
 
 
     beta:
 
       (
+
         1 -
-        safeMean
+        mean
+
       ) *
 
       concentration,
 
 
-    /*
-    Useful quantities for the explanation panel.
-    */
-    baseMean:
+    concentration,
+
+
+    semanticMean:
+
       sigmoid(
-        baseLogit
+        semanticLogit
       ),
 
+
     teacherShift,
+
 
     richness,
 
@@ -1008,49 +1076,45 @@ export function priorForEdge(
 
 /* ============================================================
    STUDENT POSTERIOR
-
-   For student i and semantic relation e:
-
-       θ_i,e ~ Beta(α_i,e, β_i,e)
-
-
-   Learner observations contribute fractional evidence.
-
-   If y = 1:
-
-       α' = α + w
-
-   If y = 0:
-
-       β' = β + w
-
-
-   More generally:
-
-       α' = α + wy
-
-       β' = β + w(1-y)
    ============================================================ */
 
 export function posteriorForEdge(
+
   state,
+
   edgeId,
-  params = DEFAULT_PARAMS
+
+  params =
+    DEFAULT_PARAMS
+
 ) {
 
   const prior =
+
     priorForEdge(
+
       state,
+
       edgeId,
+
       params
+
     );
 
 
   const local =
+
     state.edgeStates[
-      edgeId
+      prior.edge.id
     ];
 
+
+  /*
+  Conjugate fractional evidence update.
+
+  alpha' = alpha + positive evidence
+  beta'  = beta  + negative evidence
+  */
 
   const alpha =
 
@@ -1081,16 +1145,19 @@ export function posteriorForEdge(
 
 
   const variance =
+
     betaVariance(
+
       alpha,
+
       beta
+
     );
 
 
   return {
 
     ...prior,
-
 
     alpha,
 
@@ -1120,30 +1187,33 @@ export function posteriorForEdge(
 
 
 /* ============================================================
-   STUDENT EVIDENCE STRENGTH
-
-   Same correctness does NOT imply same information.
-
-   Recognition is weak evidence.
-
-   Explanation is stronger.
-
-   Transfer into a new context is stronger still.
-
-   Hints reduce evidence.
-
-   Task difficulty modestly changes evidential strength.
+   STUDENT EVIDENCE WEIGHT
    ============================================================ */
 
-export function studentEvidenceWeight({
+export function evidenceWeight({
+
   responseType,
-  hints,
-  difficulty,
+
+  hints = 0,
+
+  difficulty = 0.5,
+
 }) {
 
-  /* ----------------------------------------------------------
-     HINT PENALTY
-     ---------------------------------------------------------- */
+  const base =
+
+    RESPONSE_WEIGHTS[
+      responseType
+    ]
+
+    ??
+
+    RESPONSE_WEIGHTS.short;
+
+
+  /*
+  More hints reduce evidential strength.
+  */
 
   const hintFactor =
 
@@ -1158,14 +1228,9 @@ export function studentEvidenceWeight({
         : 0.48;
 
 
-  /* ----------------------------------------------------------
-     DIFFICULTY FACTOR
-
-     Range is deliberately restrained.
-
-     Difficulty should matter, but should not dominate the
-     observation.
-     ---------------------------------------------------------- */
+  /*
+  Harder tasks receive a modest evidential boost.
+  */
 
   const difficultyFactor =
 
@@ -1174,18 +1239,23 @@ export function studentEvidenceWeight({
     +
 
     0.44 *
-    difficulty;
 
+    clamp(
 
-  /* ----------------------------------------------------------
-     FINAL FRACTIONAL EVIDENCE
-     ---------------------------------------------------------- */
+      Number(
+        difficulty
+      ),
+
+      0,
+
+      1
+
+    );
+
 
   return (
 
-    RESPONSE_WEIGHTS[
-      responseType
-    ]
+    base
 
     *
 
@@ -1201,23 +1271,35 @@ export function studentEvidenceWeight({
 
 
 /* ============================================================
-   APPLY STUDENT OBSERVATION
+   APPLY STUDENT EVIDENCE
    ============================================================ */
 
 export function applyStudentEvidence(
+
   state,
+
   edgeId,
+
   observation
+
 ) {
 
-  const local =
-    state.edgeStates[
+  const edge =
+    edgeById(
       edgeId
+    );
+
+
+  const local =
+
+    state.edgeStates[
+      edge.id
     ];
 
 
   const weight =
-    studentEvidenceWeight(
+
+    evidenceWeight(
       observation
     );
 
@@ -1237,7 +1319,8 @@ export function applyStudentEvidence(
   }
 
 
-  state.time += 1;
+  state.eventIndex +=
+    1;
 
 
   local.history.push({
@@ -1246,8 +1329,8 @@ export function applyStudentEvidence(
 
     weight,
 
-    t:
-      state.time,
+    eventIndex:
+      state.eventIndex,
 
   });
 
@@ -1258,25 +1341,40 @@ export function applyStudentEvidence(
 
 
 /* ============================================================
-   ADD TEACHER EXPOSURE
+   CHANGE TEACHER EXPOSURE
    ============================================================ */
 
-export function addTeacherExposure(
+export function changeTeacherMentions(
+
   state,
+
   edgeId,
-  amount = 1
+
+  amount
+
 ) {
 
-  const local =
-    state.edgeStates[
+  const edge =
+    edgeById(
       edgeId
+    );
+
+
+  const local =
+
+    state.edgeStates[
+      edge.id
     ];
 
 
   local.teacherMentions =
+
     clamp(
 
-      local.teacherMentions +
+      local.teacherMentions
+
+      +
+
       amount,
 
       0,
@@ -1286,7 +1384,8 @@ export function addTeacherExposure(
     );
 
 
-  state.time += 1;
+  state.eventIndex +=
+    1;
 
 
   return local.teacherMentions;
@@ -1295,21 +1394,193 @@ export function addTeacherExposure(
 
 
 /* ============================================================
-   SET CONTEXTUAL EDGE INPUT
+   SET EXTERNAL SEMANTIC PRIOR STRENGTH
    ============================================================ */
 
-export function setEdgeInput(
+export function setEdgeExternal(
+
   state,
+
   edgeId,
-  key,
+
   value
+
 ) {
 
-  /*
-  Only these two contextual inputs can be changed through this
-  function.
-  */
+  const edge =
+    edgeById(
+      edgeId
+    );
 
-  if (
-    ![
- 
+
+  state.edgeStates[
+    edge.id
+  ].external =
+
+    clamp(
+
+      Number(
+        value
+      ),
+
+      0,
+
+      1
+
+    );
+
+}
+
+
+/* ============================================================
+   CREATE THE VIEW-SPECIFIC EDGE SET
+   ============================================================ */
+
+export function graphEdges(
+
+  state,
+
+  stage,
+
+  params =
+    DEFAULT_PARAMS
+
+) {
+
+  return DEMO_EDGES.map(
+    (edge) => {
+
+      const local =
+
+        state.edgeStates[
+          edge.id
+        ];
+
+
+      /*
+      Curriculum view:
+      opportunity strength.
+      */
+
+      let strength =
+        local.curriculum;
+
+
+      /*
+      Teacher view:
+      enactment / repetition strength.
+      */
+
+      if (
+        stage ===
+        'teacher'
+      ) {
+
+        strength =
+
+          clamp(
+
+            local.teacherMentions /
+            5,
+
+            0,
+
+            1
+
+          );
+
+      }
+
+
+      /*
+      Student view:
+      posterior latent knowledge probability.
+      */
+
+      if (
+        stage ===
+        'student'
+      ) {
+
+        strength =
+
+          posteriorForEdge(
+
+            state,
+
+            edge.id,
+
+            params
+
+          ).mean;
+
+      }
+
+
+      return {
+
+        ...edge,
+
+        strength,
+
+      };
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   SELECTED EDGE SUMMARY
+   ============================================================ */
+
+export function selectedSummary(
+
+  state,
+
+  params =
+    DEFAULT_PARAMS
+
+) {
+
+  const edge =
+    edgeById(
+      state.selectedEdgeId
+    );
+
+
+  return {
+
+    edge,
+
+
+    relation:
+
+      relationById(
+        edge.relation
+      ),
+
+
+    local:
+
+      state.edgeStates[
+        edge.id
+      ],
+
+
+    posterior:
+
+      posteriorForEdge(
+
+        state,
+
+        edge.id,
+
+        params
+
+      ),
+
+  };
+
+}
