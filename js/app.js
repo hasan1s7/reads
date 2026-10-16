@@ -1,1030 +1,2169 @@
-import { renderBetaChart } from './charts.js';
+import { betaPdf, clamp } from './math.js';
 
 import {
   DEFAULT_PARAMS,
   DEMO_EDGES,
-  addTeacherExposure,
   applyStudentEvidence,
+  changeTeacherMentions,
   createState,
-  graphSnapshot,
-  posteriorForEdge,
+  graphEdges,
   relationById,
-  resetStudentEvidence,
-  selectedEdgeSummary,
-  setEdgeInput,
-  teacherRichness,
+  selectedSummary,
+  setEdgeExternal,
+  teacherNetworkMetrics,
 } from './model.js';
 
-const $ = (id) => document.getElementById(id);
 
-let state = createState();
+const $ = (id) =>
+  document.getElementById(id);
+
+
+let state =
+  createState();
+
 
 let params = {
   ...DEFAULT_PARAMS,
 };
 
+
+let toastTimer = null;
+
+
 /* ============================================================
-   GRAPH LAYOUT
-   ============================================================
-
-   We deliberately keep nodes in fixed positions across the
-   curriculum, teacher, and student graphs.
-
-   That lets the user interpret changes in edge thickness as
-   changes in the meaning of the graph rather than changes in
-   layout.
-
-   Curriculum:
-      thickness = semantic opportunity
-
-   Teacher:
-      thickness = enacted exposure / repetition
-
-   Student:
-      thickness = posterior probability of knowledge
+   FIXED NETWORK GEOMETRY
    ============================================================ */
 
 const NODE_POSITIONS = {
-  skeletal: [180, 128],
 
-  thin: [42, 78],
-  adjective: [47, 184],
+  skeletal: [380, 275],
 
-  'skeletal legs': [166, 230],
-  '-al suffix': [300, 54],
-  magical: [310, 158],
+  thin: [155, 165],
 
-  'skeletal system': [177, 29],
-  body: [280, 225],
+  adjective: [150, 340],
 
-  magic: [333, 222],
-  system: [82, 29],
+  'skeletal legs': [335, 480],
+
+  '-al suffix': [600, 135],
+
+  magical: [615, 300],
+
+  'skeletal system': [390, 80],
+
+  body: [610, 455],
+
+  magic: [690, 360],
+
+  system: [150, 80],
+
 };
 
 
 /* ============================================================
-   BASIC UTILITIES
+   COPY FOR THE THREE NETWORK LAYERS
+   ============================================================ */
+
+const STAGE_COPY = {
+
+  curriculum: {
+
+    eyebrow:
+      'Curriculum layer',
+
+    title:
+      'Opportunity to learn',
+
+    description:
+      'Edge strength represents how available each relation is in the instructional materials.',
+
+    color:
+      '#315ad8',
+
+    soft:
+      '#e8edff',
+
+  },
+
+
+  teacher: {
+
+    eyebrow:
+      'Teacher layer',
+
+    title:
+      'Enacted semantic network',
+
+    description:
+      'Edge strength represents how strongly the relation is instantiated and repeated in teacher talk.',
+
+    color:
+      '#b86b16',
+
+    soft:
+      '#fff1df',
+
+  },
+
+
+  student: {
+
+    eyebrow:
+      'Student layer',
+
+    title:
+      'Latent knowledge network',
+
+    description:
+      'Edge strength represents the posterior probability that the student possesses or can use the relation.',
+
+    color:
+      '#2d8069',
+
+    soft:
+      '#e7f4ef',
+
+  },
+
+};
+
+
+/* ============================================================
+   SMALL UTILITIES
    ============================================================ */
 
 function escapeHtml(value) {
+
   return String(value).replace(
+
     /[&<>'"]/g,
-    (char) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;',
-      })[char]
+
+    (char) => ({
+
+      '&': '&amp;',
+
+      '<': '&lt;',
+
+      '>': '&gt;',
+
+      "'": '&#39;',
+
+      '"': '&quot;',
+
+    })[char]
+
   );
+
 }
 
 
-function relationColor(relation) {
-  const colors = {
-    defines: '#c84a44',
-    category_of: '#b07a18',
-    morphologically_from: '#7c5bb5',
-    exemplifies: '#2f78b7',
-    same_pattern_as: '#2d8a74',
-    part_of: '#8a6747',
-    similar_to: '#6374a8',
-    contrasts_with: '#8e4f75',
+function escapeXml(value) {
+
+  return escapeHtml(value);
+
+}
+
+
+function showToast(message) {
+
+  const toast =
+    $('toast');
+
+
+  toast.textContent =
+    message;
+
+
+  toast.classList.add(
+    'show'
+  );
+
+
+  clearTimeout(
+    toastTimer
+  );
+
+
+  toastTimer =
+    setTimeout(
+      () =>
+        toast.classList.remove(
+          'show'
+        ),
+
+      1500
+    );
+
+}
+
+
+/* ============================================================
+   TRANSLATE POSTERIOR UNCERTAINTY INTO A FRIENDLY LABEL
+   ============================================================ */
+
+function confidenceFromSd(sd) {
+
+  /*
+  Rough display mapping only.
+
+  Beta SD around 0.25 = relatively broad.
+  Beta SD near 0.08 = comparatively concentrated.
+  */
+
+  const score =
+    clamp(
+
+      1 -
+      (
+        sd -
+        0.07
+      ) /
+      0.20,
+
+      0,
+
+      1
+
+    );
+
+
+  const label =
+
+    score > 0.72
+
+      ? 'high'
+
+      : score > 0.42
+
+        ? 'medium'
+
+        : 'low';
+
+
+  return {
+
+    score,
+
+    label,
+
   };
 
-  return colors[relation] || '#69707d';
-}
-
-
-function formatRelation(edge) {
-  const relation =
-    relationById(edge.relation);
-
-  return `${edge.source} → ${relation.label} → ${edge.target}`;
 }
 
 
 /* ============================================================
-   EDGE SELECTOR
+   EDGE LIST
    ============================================================ */
 
-function populateEdgeSelect() {
-  const select = $('edgeSelect');
+function renderEdgeList() {
 
-  select.innerHTML =
+  $('edgeList').innerHTML =
+
     DEMO_EDGES
       .map((edge) => {
-        const relation =
-          relationById(edge.relation);
-
-        return `
-          <option value="${edge.id}">
-            ${escapeHtml(edge.source)}
-            →
-            ${escapeHtml(relation.label)}
-            →
-            ${escapeHtml(edge.target)}
-          </option>
-        `;
-      })
-      .join('');
-
-  select.value =
-    state.selectedEdgeId;
-}
-
-
-/* ============================================================
-   CONTROL SYNCHRONIZATION
-   ============================================================ */
-
-function syncSelectedControls() {
-  const { local } =
-    selectedEdgeSummary(
-      state,
-      params
-    );
-
-  $('curriculumStrengthRange').value =
-    local.curriculum;
-
-  $('externalStrengthRange').value =
-    local.external;
-
-  $('teacherMentionsRange').value =
-    local.teacherMentions;
-}
-
-
-function syncParams() {
-  params.curriculumWeight =
-    Number(
-      $('curriculumWeightRange').value
-    );
-
-  params.externalWeight =
-    Number(
-      $('externalWeightRange').value
-    );
-
-  params.teacherExposureWeight =
-    Number(
-      $('teacherExposureWeightRange').value
-    );
-
-  params.teacherRichnessWeight =
-    Number(
-      $('teacherRichnessWeightRange').value
-    );
-
-  params.edgePooling =
-    Number(
-      $('edgePoolingRange').value
-    );
-}
-
-
-function updateLabels() {
-  $('curriculumStrengthLabel').textContent =
-    Number(
-      $('curriculumStrengthRange').value
-    ).toFixed(2);
-
-  $('externalStrengthLabel').textContent =
-    Number(
-      $('externalStrengthRange').value
-    ).toFixed(2);
-
-  $('teacherMentionsLabel').textContent =
-    Number(
-      $('teacherMentionsRange').value
-    ).toFixed(0);
-
-  $('difficultyLabel').textContent =
-    Number(
-      $('difficultyRange').value
-    ).toFixed(2);
-
-  $('curriculumWeightLabel').textContent =
-    Number(
-      $('curriculumWeightRange').value
-    ).toFixed(2);
-
-  $('externalWeightLabel').textContent =
-    Number(
-      $('externalWeightRange').value
-    ).toFixed(2);
-
-  $('teacherExposureWeightLabel').textContent =
-    Number(
-      $('teacherExposureWeightRange').value
-    ).toFixed(2);
-
-  $('teacherRichnessWeightLabel').textContent =
-    Number(
-      $('teacherRichnessWeightRange').value
-    ).toFixed(2);
-
-  $('edgePoolingLabel').textContent =
-    Number(
-      $('edgePoolingRange').value
-    ).toFixed(2);
-}
-
-
-/* ============================================================
-   NETWORK GRAPH RENDERING
-   ============================================================ */
-
-function renderNetwork(
-  svg,
-  stage
-) {
-  const edges =
-    graphSnapshot(
-      state,
-      stage,
-      params
-    );
-
-  const selectedId =
-    state.selectedEdgeId;
-
-  const visibleNodes =
-    new Set();
-
-  const edgeMarkup =
-    edges
-      .map((edge) => {
-        const [x1, y1] =
-          NODE_POSITIONS[edge.source] ||
-          [180, 130];
-
-        const [x2, y2] =
-          NODE_POSITIONS[edge.target] ||
-          [180, 130];
-
-        visibleNodes.add(
-          edge.source
-        );
-
-        visibleNodes.add(
-          edge.target
-        );
-
-        const selected =
-          edge.id === selectedId;
-
-        const strength =
-          edge.strength;
-
-        const opacity =
-          0.15 +
-          0.80 * strength;
-
-        const width =
-          1 +
-          strength * 6 +
-          (selected ? 2 : 0);
-
-        const color =
-          selected
-            ? relationColor(
-                edge.relation
-              )
-            : '#7d8591';
 
         const relation =
           relationById(
             edge.relation
           );
 
-        const midpointX =
-          (x1 + x2) / 2;
 
-        const midpointY =
-          (y1 + y2) / 2;
+        const active =
+
+          edge.id ===
+          state.selectedEdgeId
+
+            ? 'active'
+
+            : '';
+
 
         return `
-          <g>
-            <line
-              x1="${x1}"
-              y1="${y1}"
-              x2="${x2}"
-              y2="${y2}"
-              stroke="${color}"
-              stroke-width="${width.toFixed(2)}"
-              opacity="${opacity.toFixed(2)}"
-              stroke-linecap="round"
-            />
 
-            ${
-              selected
-                ? `
-                  <rect
-                    x="${midpointX - 42}"
-                    y="${midpointY - 17}"
-                    width="84"
-                    height="18"
-                    rx="9"
-                    fill="#ffffff"
-                    opacity="0.94"
-                  />
+          <button
 
-                  <text
-                    x="${midpointX}"
-                    y="${midpointY - 5}"
-                    text-anchor="middle"
-                    font-size="9"
-                    font-weight="700"
-                    fill="${color}"
-                  >
-                    ${escapeHtml(
-                      relation.label
-                    )}
-                  </text>
-                `
-                : ''
-            }
-          </g>
+            class="edge-row ${active}"
+
+            data-edge-id="${edge.id}"
+
+            type="button"
+
+          >
+
+            <div class="relation">
+
+              <span
+
+                class="relation-dot"
+
+                style="background:${relation.color}"
+
+              ></span>
+
+              ${escapeHtml(
+                relation.label
+              )}
+
+            </div>
+
+
+            <div class="triple">
+
+              ${escapeHtml(
+                edge.source
+              )}
+
+              →
+
+              ${escapeHtml(
+                edge.target
+              )}
+
+            </div>
+
+          </button>
+
         `;
+
       })
       .join('');
 
-  const nodeMarkup =
-    [...visibleNodes]
-      .map((node) => {
-        const [x, y] =
-          NODE_POSITIONS[node] ||
-          [180, 130];
 
-        const isTarget =
-          node === 'skeletal';
+  document
+    .querySelectorAll(
+      '.edge-row'
+    )
+    .forEach(
+      (button) => {
 
-        const label =
-          node.length > 15
-            ? `${node.slice(0, 14)}…`
-            : node;
+        button.addEventListener(
+          'click',
 
-        return `
-          <g>
-            <circle
-              cx="${x}"
-              cy="${y}"
-              r="${isTarget ? 18 : 12}"
-              fill="${
-                isTarget
-                  ? '#3157d5'
-                  : '#ffffff'
-              }"
-              stroke="${
-                isTarget
-                  ? '#3157d5'
-                  : '#969eaa'
-              }"
-              stroke-width="1.5"
-            />
+          () => {
 
-            <text
-              x="${x}"
-              y="${y + 3}"
-              text-anchor="middle"
-              font-size="${
-                isTarget
-                  ? 8.5
-                  : 7.5
-              }"
-              font-weight="${
-                isTarget
-                  ? 700
-                  : 600
-              }"
-              fill="${
-                isTarget
-                  ? '#ffffff'
-                  : '#343943'
-              }"
-            >
-              ${escapeHtml(label)}
-            </text>
-          </g>
-        `;
-      })
-      .join('');
+            state.selectedEdgeId =
+              button.dataset.edgeId;
 
-  let stageLabel = '';
 
-  if (stage === 'curriculum') {
-    stageLabel =
-      'edge width = curriculum opportunity';
-  }
+            syncSelectedEdgeControls();
 
-  if (stage === 'teacher') {
-    stageLabel =
-      'edge width = teacher enactment';
-  }
 
-  if (stage === 'student') {
-    stageLabel =
-      'edge width = posterior knowledge';
-  }
+            renderAll();
 
-  svg.innerHTML = `
-    <rect
-      x="0"
-      y="0"
-      width="360"
-      height="260"
-      rx="12"
-      fill="#fafbfc"
-    />
+          }
+        );
 
-    ${edgeMarkup}
+      }
+    );
 
-    ${nodeMarkup}
-
-    <text
-      x="180"
-      y="251"
-      text-anchor="middle"
-      font-size="9"
-      fill="#777f89"
-    >
-      ${stageLabel}
-    </text>
-  `;
 }
 
 
 /* ============================================================
-   SELECTED RELATION PANEL
+   STAGE HEADER
    ============================================================ */
 
-function renderSelectedEdge() {
-  const {
-    edge,
-    local,
-    posterior,
-  } =
-    selectedEdgeSummary(
-      state,
-      params
+function renderStageHeader() {
+
+  const copy =
+    STAGE_COPY[
+      state.stage
+    ];
+
+
+  $('stageEyebrow').textContent =
+    copy.eyebrow;
+
+
+  $('stageTitle').textContent =
+    copy.title;
+
+
+  $('stageDescription').textContent =
+    copy.description;
+
+
+  document
+    .querySelectorAll(
+      '.seg-btn'
+    )
+    .forEach(
+      (button) => {
+
+        button.classList.toggle(
+
+          'active',
+
+          button.dataset.stage ===
+          state.stage
+
+        );
+
+      }
     );
+
+}
+
+
+/* ============================================================
+   NODE RENDERER
+   ============================================================ */
+
+function labelBox(node) {
+
+  const [x, y] =
+
+    NODE_POSITIONS[node] ||
+
+    [380, 275];
+
+
+  const main =
+    node === 'skeletal';
+
+
+  const width =
+
+    Math.max(
+
+      62,
+
+      Math.min(
+
+        132,
+
+        node.length *
+        7.2 +
+        22
+
+      )
+
+    );
+
+
+  const height =
+
+    main
+
+      ? 38
+
+      : 30;
+
+
+  const fill =
+
+    main
+
+      ? '#171916'
+
+      : '#fffefa';
+
+
+  const stroke =
+
+    main
+
+      ? '#171916'
+
+      : '#cfd1ca';
+
+
+  const text =
+
+    main
+
+      ? '#ffffff'
+
+      : '#242721';
+
+
+  return `
+
+    <g
+
+      transform="translate(
+
+        ${x - width / 2},
+
+        ${y - height / 2}
+
+      )"
+
+    >
+
+      <rect
+
+        width="${width}"
+
+        height="${height}"
+
+        rx="${main ? 13 : 11}"
+
+        fill="${fill}"
+
+        stroke="${stroke}"
+
+        stroke-width="1.2"
+
+      />
+
+
+      <text
+
+        x="${width / 2}"
+
+        y="${height / 2 + 4}"
+
+        text-anchor="middle"
+
+        font-size="${
+          main
+            ? 13
+            : 11.5
+        }"
+
+        font-weight="${
+          main
+            ? 760
+            : 650
+        }"
+
+        fill="${text}"
+
+      >
+
+        ${escapeXml(node)}
+
+      </text>
+
+    </g>
+
+  `;
+
+}
+
+
+/* ============================================================
+   SELECTED EDGE LABEL
+   ============================================================ */
+
+function edgeLabel(edge) {
+
+  const [x1, y1] =
+
+    NODE_POSITIONS[
+      edge.source
+    ] ||
+
+    [380, 275];
+
+
+  const [x2, y2] =
+
+    NODE_POSITIONS[
+      edge.target
+    ] ||
+
+    [380, 275];
+
 
   const relation =
     relationById(
       edge.relation
     );
 
-  $('selectedRelationPill').textContent =
-    relation.label;
 
-  $('edgeMeaningBox').innerHTML = `
-    <strong>
-      ${escapeHtml(edge.source)}
-      →
-      ${escapeHtml(relation.label)}
-      →
-      ${escapeHtml(edge.target)}
-    </strong>
+  const mx =
+    (x1 + x2) / 2;
 
-    <br><br>
 
-    ${escapeHtml(
-      relation.description
-    )}
+  const my =
+    (y1 + y2) / 2;
 
-    <br><br>
 
-    <span class="muted">
-      The semantic relation itself comes from the
-      teacher-network framework.
+  const width =
 
-      The numeric curriculum, external-prior,
-      and learner values in this dashboard are
-      synthetic research-demo quantities.
-    </span>
+    Math.max(
+
+      72,
+
+      relation.label.length *
+      7.2 +
+      24
+
+    );
+
+
+  return `
+
+    <g
+
+      transform="translate(
+
+        ${mx - width / 2},
+
+        ${my - 13}
+
+      )"
+
+      pointer-events="none"
+
+    >
+
+      <rect
+
+        width="${width}"
+
+        height="24"
+
+        rx="12"
+
+        fill="#fffefa"
+
+        stroke="${relation.color}"
+
+        stroke-width="1.2"
+
+      />
+
+
+      <text
+
+        x="${width / 2}"
+
+        y="16"
+
+        text-anchor="middle"
+
+        font-size="10.5"
+
+        font-weight="760"
+
+        fill="${relation.color}"
+
+      >
+
+        ${escapeXml(
+          relation.label
+        )}
+
+      </text>
+
+    </g>
+
   `;
 
-  $('curriculumMetric').textContent =
-    local.curriculum.toFixed(3);
+}
 
-  $('teacherMentionsMetric').textContent =
+
+/* ============================================================
+   MAIN NETWORK
+   ============================================================ */
+
+function renderNetwork() {
+
+  const svg =
+    $('networkSvg');
+
+
+  const copy =
+    STAGE_COPY[
+      state.stage
+    ];
+
+
+  const edges =
+    graphEdges(
+
+      state,
+
+      state.stage,
+
+      params
+
+    );
+
+
+  const selectedId =
+    state.selectedEdgeId;
+
+
+  const visibleNodes =
+    new Set();
+
+
+  const edgeMarkup =
+
+    edges
+      .map((edge) => {
+
+        const [x1, y1] =
+
+          NODE_POSITIONS[
+            edge.source
+          ] ||
+
+          [380, 275];
+
+
+        const [x2, y2] =
+
+          NODE_POSITIONS[
+            edge.target
+          ] ||
+
+          [380, 275];
+
+
+        visibleNodes.add(
+          edge.source
+        );
+
+
+        visibleNodes.add(
+          edge.target
+        );
+
+
+        const selected =
+
+          edge.id ===
+          selectedId;
+
+
+        const relation =
+          relationById(
+            edge.relation
+          );
+
+
+        const stroke =
+
+          selected
+
+            ? relation.color
+
+            : copy.color;
+
+
+        const width =
+
+          selected
+
+            ? 3.4 +
+              edge.strength *
+              6
+
+            : 1.2 +
+              edge.strength *
+              4.2;
+
+
+        const opacity =
+
+          selected
+
+            ? 0.98
+
+            : 0.15 +
+              edge.strength *
+              0.48;
+
+
+        return `
+
+          <g
+
+            data-edge-group="${edge.id}"
+
+          >
+
+            <line
+
+              x1="${x1}"
+
+              y1="${y1}"
+
+              x2="${x2}"
+
+              y2="${y2}"
+
+              stroke="${stroke}"
+
+              stroke-width="${width.toFixed(2)}"
+
+              opacity="${opacity.toFixed(2)}"
+
+              stroke-linecap="round"
+
+            />
+
+
+            <line
+
+              class="edge-hit"
+
+              data-edge-id="${edge.id}"
+
+              x1="${x1}"
+
+              y1="${y1}"
+
+              x2="${x2}"
+
+              y2="${y2}"
+
+              stroke="transparent"
+
+              stroke-width="20"
+
+              style="cursor:pointer"
+
+            />
+
+          </g>
+
+        `;
+
+      })
+      .join('');
+
+
+  const nodeMarkup =
+
+    [...visibleNodes]
+      .map(
+        labelBox
+      )
+      .join('');
+
+
+  const selectedEdge =
+
+    edges.find(
+      (edge) =>
+        edge.id ===
+        selectedId
+    );
+
+
+  svg.innerHTML = `
+
+    <defs>
+
+      <filter
+
+        id="softShadow"
+
+        x="-30%"
+
+        y="-30%"
+
+        width="160%"
+
+        height="160%"
+
+      >
+
+        <feDropShadow
+
+          dx="0"
+
+          dy="4"
+
+          stdDeviation="6"
+
+          flood-color="#11130f"
+
+          flood-opacity="0.08"
+
+        />
+
+      </filter>
+
+    </defs>
+
+
+    <rect
+
+      x="0"
+
+      y="0"
+
+      width="760"
+
+      height="560"
+
+      fill="#fffefa"
+
+    />
+
+
+    <circle
+
+      cx="380"
+
+      cy="275"
+
+      r="170"
+
+      fill="${copy.soft}"
+
+      opacity="0.34"
+
+    />
+
+
+    ${edgeMarkup}
+
+
+    <g
+
+      filter="url(#softShadow)"
+
+    >
+
+      ${nodeMarkup}
+
+    </g>
+
+
+    ${
+      selectedEdge
+
+        ? edgeLabel(
+            selectedEdge
+          )
+
+        : ''
+    }
+
+  `;
+
+
+  svg
+    .querySelectorAll(
+      '.edge-hit'
+    )
+    .forEach(
+      (line) => {
+
+        line.addEventListener(
+          'click',
+
+          () => {
+
+            state.selectedEdgeId =
+              line.dataset.edgeId;
+
+
+            syncSelectedEdgeControls();
+
+
+            renderAll();
+
+          }
+        );
+
+      }
+    );
+
+
+  const stageName =
+
+    state.stage ===
+    'curriculum'
+
+      ? 'opportunity'
+
+      : state.stage ===
+        'teacher'
+
+        ? 'enactment'
+
+        : 'posterior';
+
+
+  $('networkLegend').innerHTML = `
+
+    <span>
+
+      <span
+
+        class="legend-swatch"
+
+        style="background:${copy.color}"
+
+      ></span>
+
+      line width =
+      ${stageName}
+      strength
+
+    </span>
+
+
+    <span>
+
+      selected edge uses its relation color
+
+    </span>
+
+  `;
+
+}
+
+
+/* ============================================================
+   SELECTED EDGE INSPECTOR
+   ============================================================ */
+
+function renderInspector() {
+
+  const {
+
+    edge,
+
+    relation,
+
+    local,
+
+    posterior,
+
+  } =
+    selectedSummary(
+      state,
+      params
+    );
+
+
+  const confidence =
+    confidenceFromSd(
+      posterior.sd
+    );
+
+
+  $('relationType').textContent =
+    relation.label;
+
+
+  document
+    .querySelector(
+      '.inspector .relation-dot'
+    )
+    .style.background =
+      relation.color;
+
+
+  $('edgeTitle').textContent =
+    `${edge.source} → ${edge.target}`;
+
+
+  $('edgeDescription').textContent =
+    relation.description;
+
+
+  $('metricCurriculum').textContent =
+    local.curriculum.toFixed(
+      2
+    );
+
+
+  $('metricTeacher').textContent =
     String(
       local.teacherMentions
     );
 
-  $('studentPosteriorMetric').textContent =
-    posterior.mean.toFixed(3);
-}
 
-
-/* ============================================================
-   TEACHER-NETWORK PANEL
-   ============================================================ */
-
-function renderTeacherRichness() {
-  const r =
-    teacherRichness(state);
-
-  $('richSize').textContent =
-    r.size.toFixed(2);
-
-  $('richVariety').textContent =
-    r.variety.toFixed(2);
-
-  $('richRepetition').textContent =
-    r.repetition.toFixed(2);
-
-  $('richWeb').textContent =
-    r.web.toFixed(2);
-
-  $('richReach').textContent =
-    r.reach.toFixed(2);
-
-  $('teacherSummary').innerHTML = `
-    <p>
-      The current synthetic teacher network contains
-
-      <strong>
-        ${r.activeEdges}
-        active semantic relations
-      </strong>
-
-      and
-
-      <strong>
-        ${r.totalMentions}
-        total relation mentions.
-      </strong>
-    </p>
-
-    <p>
-      The current illustrative richness composite is
-
-      <strong>
-        ${r.composite.toFixed(3)}
-      </strong>.
-    </p>
-
-    <p>
-      This composite is deliberately simple.
-
-      In the actual research program, the better approach is
-      likely to preserve the dimensions separately or estimate
-      a lower-dimensional latent structure from observed network
-      metrics rather than manually averaging them.
-    </p>
-  `;
-}
-
-
-/* ============================================================
-   STUDENT POSTERIOR PANEL
-   ============================================================ */
-
-function renderStudentPosterior() {
-  const posterior =
-    posteriorForEdge(
-      state,
-      state.selectedEdgeId,
-      params
+  $('metricStudent').textContent =
+    posterior.mean.toFixed(
+      2
     );
 
-  const local =
-    state.edgeStates[
-      state.selectedEdgeId
-    ];
 
-  /*
-  Recover the contextual prior by removing direct learner evidence.
-  */
-  const priorAlpha =
-    posterior.alpha -
-    local.positiveEvidence;
-
-  const priorBeta =
-    posterior.beta -
-    local.negativeEvidence;
-
-  const priorMean =
-    priorAlpha /
-    (
-      priorAlpha +
-      priorBeta
+  $('metricSd').textContent =
+    posterior.sd.toFixed(
+      2
     );
 
-  $('priorMean').textContent =
-    priorMean.toFixed(3);
 
-  $('posteriorMean').textContent =
-    posterior.mean.toFixed(3);
+  $('confidenceLabel').textContent =
+    confidence.label;
 
-  $('posteriorSd').textContent =
-    posterior.sd.toFixed(3);
 
-  $('betaLabel').textContent =
-    `Beta(${posterior.alpha.toFixed(2)}, ${posterior.beta.toFixed(2)})`;
+  $('confidenceBar').style.width =
+    `${Math.round(
+      confidence.score *
+      100
+    )}%`;
 
-  renderBetaChart(
-    $('betaChart'),
-    posterior.alpha,
-    posterior.beta,
-    posterior.mean
-  );
 }
 
 
 /* ============================================================
-   MODEL-DECOMPOSITION PANEL
+   TEACHER PANEL
    ============================================================ */
 
-function renderInferenceBreakdown() {
+function renderTeacherPanel() {
+
   const {
-    edge,
     local,
-    posterior,
   } =
-    selectedEdgeSummary(
+    selectedSummary(
       state,
       params
     );
 
-  const relation =
-    relationById(
-      edge.relation
+
+  const metrics =
+    teacherNetworkMetrics(
+      state
     );
 
-  const priorAlpha =
-    posterior.alpha -
-    local.positiveEvidence;
 
-  const priorBeta =
-    posterior.beta -
-    local.negativeEvidence;
-
-  const priorMean =
-    priorAlpha /
-    (
-      priorAlpha +
-      priorBeta
-    );
-
-  const richness =
-    posterior.richness;
-
-  const curriculumTerm =
-    params.curriculumWeight *
-    local.curriculum;
-
-  const externalTerm =
-    params.externalWeight *
-    local.external;
-
-  const repetitionTerm =
-    params.teacherExposureWeight *
-    Math.log1p(
+  $('teacherCount').textContent =
+    String(
       local.teacherMentions
     );
 
-  const richnessTerm =
-    params.teacherRichnessWeight *
-    (
-      richness.composite -
-      0.5
+
+  $('teacherSize').textContent =
+    metrics.size.toFixed(
+      2
     );
 
-  $('inferenceBreakdown').innerHTML = `
-    <table class="compact-table">
 
-      <thead>
-        <tr>
-          <th>Component</th>
-          <th>Current value</th>
-          <th>Contribution</th>
-        </tr>
-      </thead>
+  $('teacherVariety').textContent =
+    metrics.variety.toFixed(
+      2
+    );
 
-      <tbody>
 
-        <tr>
-          <td>
-            Curriculum opportunity
-          </td>
+  $('teacherRepetition').textContent =
+    metrics.repetition.toFixed(
+      2
+    );
 
-          <td>
-            ${local.curriculum.toFixed(2)}
-          </td>
-
-          <td>
-            ${curriculumTerm.toFixed(3)}
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            External relational prior
-          </td>
-
-          <td>
-            ${local.external.toFixed(2)}
-          </td>
-
-          <td>
-            ${externalTerm.toFixed(3)}
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Teacher repetition
-          </td>
-
-          <td>
-            ${local.teacherMentions}
-            mentions
-          </td>
-
-          <td>
-            ${repetitionTerm.toFixed(3)}
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Teacher-network richness
-          </td>
-
-          <td>
-            ${richness.composite.toFixed(2)}
-          </td>
-
-          <td>
-            ${richnessTerm.toFixed(3)}
-          </td>
-        </tr>
-
-      </tbody>
-    </table>
-
-    <div class="callout">
-
-      <strong>Selected edge</strong>
-
-      <br>
-
-      ${escapeHtml(edge.source)}
-      →
-      ${escapeHtml(relation.label)}
-      →
-      ${escapeHtml(edge.target)}
-
-      <br><br>
-
-      <strong>Semantic prior before teacher effects:</strong>
-      ${posterior.baseMean.toFixed(3)}
-
-      <br>
-
-      <strong>Teacher shift on logit scale:</strong>
-      ${posterior.teacherShift.toFixed(3)}
-
-      <br>
-
-      <strong>Prior after hierarchical pooling:</strong>
-      ${priorMean.toFixed(3)}
-
-      <br>
-
-      <strong>Posterior after learner evidence:</strong>
-      ${posterior.mean.toFixed(3)}
-
-      <br>
-
-      <strong>Posterior uncertainty:</strong>
-      SD = ${posterior.sd.toFixed(3)}
-
-    </div>
-  `;
 }
 
 
 /* ============================================================
-   STATE INSPECTOR
+   BETA POSTERIOR CHART
    ============================================================ */
 
-function renderInspector() {
-  const summary =
-    selectedEdgeSummary(
+function renderBetaChart() {
+
+  const {
+    posterior,
+  } =
+    selectedSummary(
       state,
       params
     );
 
-  const richness =
-    teacherRichness(state);
 
-  const posterior =
-    summary.posterior;
+  const svg =
+    $('betaSvg');
 
-  const object = {
-    architecture: {
-      curriculum_graph:
-        'opportunities for semantic relations to occur',
 
-      teacher_graph:
-        'semantic relations actually instantiated in instruction',
+  const W = 360;
 
-      student_graph:
-        'latent posterior probabilities of semantic relations',
-    },
+  const H = 190;
 
-    selected_relation: {
-      id:
-        summary.edge.id,
+  const left = 22;
 
-      source:
-        summary.edge.source,
+  const right = 16;
 
-      relation:
-        summary.edge.relation,
+  const top = 20;
 
-      target:
-        summary.edge.target,
-    },
+  const bottom = 28;
 
-    curriculum: {
-      opportunity_strength:
-        +summary.local.curriculum.toFixed(4),
-    },
 
-    teacher: {
-      mentions:
-        summary.local.teacherMentions,
+  const points = [];
 
-      richness: {
-        size:
-          +richness.size.toFixed(4),
 
-        variety:
-          +richness.variety.toFixed(4),
+  let maxY = 0;
 
-        repetition:
-          +richness.repetition.toFixed(4),
 
-        web:
-          +richness.web.toFixed(4),
+  for (
+    let i = 1;
+    i < 100;
+    i += 1
+  ) {
 
-        reach:
-          +richness.reach.toFixed(4),
+    const x =
+      i / 100;
 
-        composite:
-          +richness.composite.toFixed(4),
-      },
-    },
 
-    student: {
-      positive_evidence:
-        +summary.local.positiveEvidence.toFixed(4),
+    const y =
+      betaPdf(
 
-      negative_evidence:
-        +summary.local.negativeEvidence.toFixed(4),
+        x,
 
-      posterior_alpha:
-        +posterior.alpha.toFixed(4),
+        posterior.alpha,
 
-      posterior_beta:
-        +posterior.beta.toFixed(4),
+        posterior.beta
 
-      posterior_mean:
-        +posterior.mean.toFixed(4),
+      );
 
-      posterior_sd:
-        +posterior.sd.toFixed(4),
-    },
 
-    model_parameters: {
-      ...params,
-    },
+    points.push({
 
-    model_time:
-      state.time,
+      x,
 
-    status: {
-      source_derived:
-        'relation taxonomy and conceptual teacher-network dimensions',
+      y,
 
-      proposed:
-        'student edge-level latent graph and Bayesian transition architecture',
+    });
 
-      synthetic:
-        'numeric strengths, coefficients, priors, and example student observations',
-    },
-  };
 
-  $('stateInspector').textContent =
-    JSON.stringify(
-      object,
-      null,
-      2
+    if (
+      Number.isFinite(y)
+    ) {
+
+      maxY =
+        Math.max(
+          maxY,
+          y
+        );
+
+    }
+
+  }
+
+
+  maxY =
+    Math.max(
+      maxY,
+      1e-6
     );
+
+
+  const sx =
+
+    (x) =>
+
+      left +
+
+      x *
+
+      (
+        W -
+        left -
+        right
+      );
+
+
+  const sy =
+
+    (y) =>
+
+      H -
+      bottom -
+
+      (
+        y /
+        maxY
+      ) *
+
+      (
+        H -
+        top -
+        bottom
+      );
+
+
+  const path =
+
+    points
+      .map(
+        (p, i) =>
+
+          `${
+            i
+              ? 'L'
+              : 'M'
+          }${
+            sx(p.x).toFixed(1)
+          },${
+            sy(p.y).toFixed(1)
+          }`
+      )
+      .join(' ');
+
+
+  const meanX =
+    sx(
+      posterior.mean
+    );
+
+
+  const area =
+
+    `${path}
+
+     L ${sx(0.99).toFixed(1)},${H - bottom}
+
+     L ${sx(0.01).toFixed(1)},${H - bottom}
+
+     Z`;
+
+
+  let ticks = '';
+
+
+  [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    1,
+  ].forEach(
+    (v) => {
+
+      const x =
+        sx(v);
+
+
+      ticks += `
+
+        <line
+
+          x1="${x}"
+
+          y1="${top}"
+
+          x2="${x}"
+
+          y2="${H - bottom}"
+
+          stroke="#e7e6e0"
+
+          stroke-width="1"
+
+        />
+
+      `;
+
+
+      ticks += `
+
+        <text
+
+          x="${x}"
+
+          y="${H - 8}"
+
+          text-anchor="middle"
+
+          font-size="10"
+
+          fill="#8c9089"
+
+        >
+
+          ${v.toFixed(2)}
+
+        </text>
+
+      `;
+
+    }
+  );
+
+
+  svg.innerHTML = `
+
+    ${ticks}
+
+
+    <path
+
+      d="${area}"
+
+      fill="#e7f4ef"
+
+      opacity="0.9"
+
+    />
+
+
+    <path
+
+      d="${path}"
+
+      fill="none"
+
+      stroke="#2d8069"
+
+      stroke-width="2.5"
+
+    />
+
+
+    <line
+
+      x1="${meanX}"
+
+      y1="${top}"
+
+      x2="${meanX}"
+
+      y2="${H - bottom}"
+
+      stroke="#171916"
+
+      stroke-width="1.4"
+
+      stroke-dasharray="4 4"
+
+    />
+
+
+    <text
+
+      x="${
+        Math.min(
+          meanX + 7,
+          W - 78
+        )
+      }"
+
+      y="${top + 12}"
+
+      font-size="10"
+
+      font-weight="700"
+
+      fill="#171916"
+
+    >
+
+      mean
+      ${posterior.mean.toFixed(2)}
+
+    </text>
+
+  `;
+
 }
 
 
 /* ============================================================
-   GLOBAL RENDER
+   POSTERIOR READOUT
+   ============================================================ */
+
+function renderPosteriorReadout() {
+
+  const {
+
+    local,
+
+    posterior,
+
+  } =
+    selectedSummary(
+      state,
+      params
+    );
+
+
+  const priorAlpha =
+
+    posterior.alpha -
+
+    local.positiveEvidence;
+
+
+  const priorBeta =
+
+    posterior.beta -
+
+    local.negativeEvidence;
+
+
+  const priorMean =
+
+    priorAlpha /
+
+    (
+      priorAlpha +
+      priorBeta
+    );
+
+
+  $('priorMean').textContent =
+    priorMean.toFixed(
+      2
+    );
+
+
+  $('posteriorMean').textContent =
+    posterior.mean.toFixed(
+      2
+    );
+
+
+  $('evidenceMass').textContent =
+    posterior.evidenceMass.toFixed(
+      2
+    );
+
+
+  if (
+    posterior.evidenceMass ===
+    0
+  ) {
+
+    $('posteriorExplanation').textContent =
+
+      'No direct student evidence yet. The current belief comes only from curriculum opportunity, teacher enactment, the optional external prior, and hierarchical pooling.';
+
+  } else {
+
+    const direction =
+
+      local.positiveEvidence >=
+      local.negativeEvidence
+
+        ? 'toward possession of the relation'
+
+        : 'away from possession of the relation';
+
+
+    $('posteriorExplanation').textContent =
+
+      `Direct assessment evidence has now shifted the contextual prior ${direction}. The posterior still carries uncertainty rather than collapsing to known / unknown.`;
+
+  }
+
+
+  renderBetaChart();
+
+}
+
+
+/* ============================================================
+   ADVANCED PANEL
+   ============================================================ */
+
+function renderAdvanced() {
+
+  const {
+    local,
+  } =
+    selectedSummary(
+      state,
+      params
+    );
+
+
+  $('curriculumWeightValue').textContent =
+    Number(
+      params.curriculumWeight
+    ).toFixed(
+      2
+    );
+
+
+  $('externalWeightValue').textContent =
+    Number(
+      params.externalWeight
+    ).toFixed(
+      2
+    );
+
+
+  $('teacherWeightValue').textContent =
+    Number(
+      params.teacherExposureWeight
+    ).toFixed(
+      2
+    );
+
+
+  $('richnessWeightValue').textContent =
+    Number(
+      params.teacherRichnessWeight
+    ).toFixed(
+      2
+    );
+
+
+  $('poolingWeightValue').textContent =
+    Number(
+      params.edgePooling
+    ).toFixed(
+      2
+    );
+
+
+  $('externalStrengthValue').textContent =
+    Number(
+      local.external
+    ).toFixed(
+      2
+    );
+
+
+  $('externalStrength').value =
+    local.external;
+
+
+  const summary =
+    selectedSummary(
+      state,
+      params
+    );
+
+
+  const metrics =
+    teacherNetworkMetrics(
+      state
+    );
+
+
+  $('stateInspector').textContent =
+
+    JSON.stringify(
+
+      {
+
+        selected_relation: {
+
+          id:
+            summary.edge.id,
+
+          source:
+            summary.edge.source,
+
+          relation:
+            summary.edge.relation,
+
+          target:
+            summary.edge.target,
+
+        },
+
+
+        layer_values: {
+
+          curriculum_opportunity:
+            +summary.local.curriculum.toFixed(4),
+
+          teacher_mentions:
+            summary.local.teacherMentions,
+
+          student_posterior_mean:
+            +summary.posterior.mean.toFixed(4),
+
+          student_posterior_sd:
+            +summary.posterior.sd.toFixed(4),
+
+        },
+
+
+        student_evidence: {
+
+          positive:
+            +summary.local.positiveEvidence.toFixed(4),
+
+          negative:
+            +summary.local.negativeEvidence.toFixed(4),
+
+          observations:
+            summary.local.history,
+
+        },
+
+
+        teacher_network_demo_metrics:
+
+          Object.fromEntries(
+
+            Object.entries(
+              metrics
+            ).map(
+
+              ([key, value]) => [
+
+                key,
+
+                typeof value ===
+                'number'
+
+                  ? +value.toFixed(4)
+
+                  : value,
+
+              ]
+
+            )
+
+          ),
+
+
+        posterior: {
+
+          alpha:
+            +summary.posterior.alpha.toFixed(4),
+
+          beta:
+            +summary.posterior.beta.toFixed(4),
+
+          mean:
+            +summary.posterior.mean.toFixed(4),
+
+          sd:
+            +summary.posterior.sd.toFixed(4),
+
+        },
+
+
+        parameters:
+          params,
+
+
+        note:
+
+          'Relation examples and teacher-network concepts are source-derived. Numeric strengths and the student edge model are synthetic/proposed.',
+
+      },
+
+      null,
+
+      2
+
+    );
+
+}
+
+
+/* ============================================================
+   SYNC SELECTED EDGE CONTROLS
+   ============================================================ */
+
+function syncSelectedEdgeControls() {
+
+  const {
+    local,
+  } =
+    selectedSummary(
+      state,
+      params
+    );
+
+
+  $('externalStrength').value =
+    local.external;
+
+
+  $('externalStrengthValue').textContent =
+    local.external.toFixed(
+      2
+    );
+
+}
+
+
+/* ============================================================
+   RENDER EVERYTHING
    ============================================================ */
 
 function renderAll() {
-  syncParams();
 
-  renderNetwork(
-    $('curriculumGraph'),
-    'curriculum'
-  );
+  renderEdgeList();
 
-  renderNetwork(
-    $('teacherGraph'),
-    'teacher'
-  );
+  renderStageHeader();
 
-  renderNetwork(
-    $('studentGraph'),
-    'student'
-  );
-
-  renderSelectedEdge();
-
-  renderTeacherRichness();
-
-  renderStudentPosterior();
-
-  renderInferenceBreakdown();
+  renderNetwork();
 
   renderInspector();
+
+  renderTeacherPanel();
+
+  renderPosteriorReadout();
+
+  renderAdvanced();
+
 }
 
 
 /* ============================================================
-   TABS
+   EVENT BINDINGS
    ============================================================ */
 
-function bindTabs() {
+function bindEvents() {
+
+  /* ----------------------------------------------------------
+     SWITCH NETWORK LAYER
+     ---------------------------------------------------------- */
+
   document
-    .querySelectorAll('.tab')
-    .forEach((button) => {
+    .querySelectorAll(
+      '.seg-btn'
+    )
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        'click',
-        () => {
+        button.addEventListener(
+          'click',
 
-          document
-            .querySelectorAll('.tab')
-            .forEach((tab) =>
-              tab.classList.remove(
-                'active'
-              )
+          () => {
+
+            state.stage =
+              button.dataset.stage;
+
+
+            renderAll();
+
+          }
+        );
+
+      }
+    );
+
+
+  /* ----------------------------------------------------------
+     DECREASE TEACHER EXPOSURE
+     ---------------------------------------------------------- */
+
+  $('teacherMinus').addEventListener(
+
+    'click',
+
+    () => {
+
+      changeTeacherMentions(
+
+        state,
+
+        state.selectedEdgeId,
+
+        -1
+
+      );
+
+
+      state.stage =
+        'teacher';
+
+
+      renderAll();
+
+    }
+
+  );
+
+
+  /* ----------------------------------------------------------
+     INCREASE TEACHER EXPOSURE
+     ---------------------------------------------------------- */
+
+  $('teacherPlus').addEventListener(
+
+    'click',
+
+    () => {
+
+      changeTeacherMentions(
+
+        state,
+
+        state.selectedEdgeId,
+
+        1
+
+      );
+
+
+      state.stage =
+        'teacher';
+
+
+      renderAll();
+
+    }
+
+  );
+
+
+  /* ----------------------------------------------------------
+     ADD STUDENT EVIDENCE
+     ---------------------------------------------------------- */
+
+  document
+    .querySelectorAll(
+      '[data-evidence]'
+    )
+    .forEach(
+      (button) => {
+
+        button.addEventListener(
+          'click',
+
+          () => {
+
+            const responseType =
+              button.dataset.evidence;
+
+
+            const correct =
+
+              Number(
+                button.dataset.correct
+              ) ===
+              1;
+
+
+            const hints =
+
+              Number(
+                $('hintsSelect').value
+              );
+
+
+            const difficulty =
+
+              Number(
+                $('difficultyRange').value
+              );
+
+
+            const weight =
+
+              applyStudentEvidence(
+
+                state,
+
+                state.selectedEdgeId,
+
+                {
+
+                  responseType,
+
+                  correct,
+
+                  hints,
+
+                  difficulty,
+
+                }
+
+              );
+
+
+            state.stage =
+              'student';
+
+
+            renderAll();
+
+
+            showToast(
+
+              `${
+                correct
+                  ? 'Positive'
+                  : 'Negative'
+              } evidence +${weight.toFixed(2)}`
+
             );
 
-          document
-            .querySelectorAll(
-              '.tab-panel'
-            )
-            .forEach((panel) =>
-              panel.classList.remove(
-                'active'
-              )
-            );
+          }
+        );
 
-          button.classList.add(
-            'active'
+      }
+    );
+
+
+  /* ----------------------------------------------------------
+     DIFFICULTY DISPLAY
+     ---------------------------------------------------------- */
+
+  $('difficultyRange')
+    .addEventListener(
+
+      'input',
+
+      () => {
+
+        $('difficultyValue').textContent =
+
+          Number(
+            $('difficultyRange').value
+          ).toFixed(
+            2
           );
 
-          const panel =
-            document.querySelector(
-              `[data-panel="${button.dataset.tab}"]`
+      }
+
+    );
+
+
+  /* ----------------------------------------------------------
+     ADVANCED MODEL SLIDERS
+     ---------------------------------------------------------- */
+
+  const paramBindings = [
+
+    [
+      'curriculumWeight',
+      'curriculumWeight',
+    ],
+
+    [
+      'externalWeight',
+      'externalWeight',
+    ],
+
+    [
+      'teacherWeight',
+      'teacherExposureWeight',
+    ],
+
+    [
+      'richnessWeight',
+      'teacherRichnessWeight',
+    ],
+
+    [
+      'poolingWeight',
+      'edgePooling',
+    ],
+
+  ];
+
+
+  paramBindings.forEach(
+
+    ([id, key]) => {
+
+      $(id).addEventListener(
+
+        'input',
+
+        () => {
+
+          params[key] =
+            Number(
+              $(id).value
             );
 
-          if (panel) {
-            panel.classList.add(
-              'active'
-            );
-          }
+
+          renderAll();
+
         }
+
       );
-    });
+
+    }
+
+  );
+
+
+  /* ----------------------------------------------------------
+     EXTERNAL RELATIONAL PRIOR STRENGTH
+     ---------------------------------------------------------- */
+
+  $('externalStrength')
+    .addEventListener(
+
+      'input',
+
+      () => {
+
+        setEdgeExternal(
+
+          state,
+
+          state.selectedEdgeId,
+
+          $('externalStrength').value
+
+        );
+
+
+        renderAll();
+
+      }
+
+    );
+
+
+  /* ----------------------------------------------------------
+     RESET
+     ---------------------------------------------------------- */
+
+  $('resetBtn')
+    .addEventListener(
+
+      'click',
+
+      () => {
+
+        state =
+          createState();
+
+
+        params = {
+          ...DEFAULT_PARAMS,
+        };
+
+
+        $('difficultyRange').value =
+          0.5;
+
+
+        $('difficultyValue').textContent =
+          '0.50';
+
+
+        $('hintsSelect').value =
+          '0';
+
+
+        $('curriculumWeight').value =
+          params.curriculumWeight;
+
+
+        $('externalWeight').value =
+          params.externalWeight;
+
+
+        $('teacherWeight').value =
+          params.teacherExposureWeight;
+
+
+        $('richnessWeight').value =
+          params.teacherRichnessWeight;
+
+
+        $('poolingWeight').value =
+          params.edgePooling;
+
+
+        syncSelectedEdgeControls();
+
+
+        renderAll();
+
+
+        showToast(
+          'Simulation reset'
+        );
+
+      }
+
+    );
+
 }
 
 
 /* ============================================================
-   SELECTED EDGE
+   INITIALIZE
    ============================================================ */
 
-$('edgeSelect').addEventListener(
-  'change',
-  () => {
+bindEvents();
 
-    state.selectedEdgeId =
-      $('edgeSelect').value;
+syncSelectedEdgeControls();
 
-    syncSelectedControl
+renderAll();
