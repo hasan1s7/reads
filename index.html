@@ -1,1035 +1,389 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>READS Semantic Learning Model</title>
-
-  <meta
-    name="description"
-    content="Interactive READS Lab prototype linking curriculum semantic networks, teacher-enacted semantic networks, and latent student knowledge."
-  />
-
-  <link rel="stylesheet" href="css/styles.css" />
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#f4f3ef" />
+  <title>READS · Semantic Transmission Lab</title>
+  <meta name="description" content="Interactive READS Lab prototype for tracing semantic relations from curriculum opportunity to teacher enactment to student knowledge." />
   <style>
-    .pipeline {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 16px;
+    :root {
+      --bg: #f4f3ef;
+      --paper: #fffefa;
+      --paper-2: #f9f8f4;
+      --ink: #171916;
+      --muted: #70736d;
+      --faint: #9b9e97;
+      --line: #deded7;
+      --line-strong: #c9cbc3;
+      --blue: #315ad8;
+      --blue-soft: #e8edff;
+      --amber: #b86b16;
+      --amber-soft: #fff1df;
+      --green: #2d8069;
+      --green-soft: #e7f4ef;
+      --red: #b54a46;
+      --red-soft: #fae9e7;
+      --shadow: 0 1px 2px rgba(20, 24, 18, .03), 0 12px 40px rgba(20, 24, 18, .055);
+      --radius: 18px;
+      --radius-sm: 12px;
     }
 
-    .graph-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      min-width: 0;
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
 
-    .graph-card h3 {
-      font-size: 15px;
-      margin: 0 0 4px;
-    }
-
-    .graph-card .stage {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .network {
-      width: 100%;
-      height: auto;
-      display: block;
-      margin-top: 10px;
-    }
-
-    .edge-toolbar {
-      display: grid;
-      grid-template-columns:
-        minmax(0, 1.25fr)
-        repeat(2, minmax(160px, 0.5fr));
-      gap: 12px;
-    }
-
-    .explain-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .explain-card {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      background: var(--panel);
-    }
-
-    .explain-card h3 {
-      font-size: 16px;
-      margin: 0 0 7px;
-    }
-
-    .dimension-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .dimension {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      background: var(--panel-soft);
-    }
-
-    .dimension strong {
-      display: block;
-      font-size: 13px;
-    }
-
-    .dimension span {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .dimension-value {
-      font-size: 22px !important;
-      font-weight: 750;
-      color: var(--text) !important;
-      margin-top: 5px;
-      display: block;
-    }
-
-    .source-note {
-      border-left: 3px solid var(--series-2);
-      padding-left: 12px;
-    }
-
-    .status-pill {
-      display: inline-block;
-      padding: 5px 8px;
-      border-radius: 999px;
-      background: var(--panel-soft);
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .compact-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .compact-table th,
-    .compact-table td {
-      text-align: left;
-      padding: 9px 8px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
-    }
-
-    .compact-table th {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-    }
-
-    .equation {
-      font-family:
-        ui-monospace,
-        SFMono-Regular,
-        Menlo,
-        Consolas,
-        monospace;
-
-      background: var(--panel-soft);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-
-      padding: 14px;
-
-      line-height: 1.8;
-      font-size: 13px;
-    }
-
-    .research-banner {
+    .shell { width: min(1380px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 64px; }
+    .topbar {
+      min-height: 58px;
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 34px;
     }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 760; letter-spacing: -.02em; }
+    .brand-mark { width: 30px; height: 30px; border: 1px solid var(--ink); border-radius: 9px; display: grid; place-items: center; font-size: 11px; letter-spacing: .08em; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
 
-    .research-banner strong {
-      font-size: 14px;
+    .ghost-btn, .primary-btn, .seg-btn, .mini-btn, .action-card, .edge-row {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
     }
+    .ghost-btn:hover, .mini-btn:hover, .seg-btn:hover, .action-card:hover, .edge-row:hover { border-color: var(--line-strong); background: #fff; }
+    .ghost-btn:active, .primary-btn:active, .mini-btn:active, .action-card:active { transform: translateY(1px); }
+    .ghost-btn { padding: 9px 12px; font-size: 13px; font-weight: 650; }
+    .primary-btn { padding: 11px 14px; background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 700; }
+    .primary-btn:hover { box-shadow: 0 7px 20px rgba(23, 25, 22, .16); }
+    .mini-btn { padding: 8px 10px; font-size: 12px; font-weight: 700; }
 
-    .research-banner span {
-      font-size: 12px;
-      color: var(--muted);
+    .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); gap: 30px; align-items: end; margin-bottom: 26px; }
+    .kicker { color: var(--blue); font-weight: 750; font-size: 12px; text-transform: uppercase; letter-spacing: .13em; margin: 0 0 10px; }
+    h1 { font-size: clamp(38px, 5vw, 68px); line-height: .98; letter-spacing: -.055em; margin: 0; max-width: 880px; font-weight: 780; }
+    .hero-copy { max-width: 720px; color: var(--muted); font-size: 16px; line-height: 1.62; margin: 17px 0 0; }
+    .hero-note { border-left: 1px solid var(--line-strong); padding-left: 22px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .hero-note strong { color: var(--ink); display: block; margin-bottom: 5px; }
+
+    .workspace { display: grid; grid-template-columns: 280px minmax(0, 1fr) 310px; gap: 14px; min-height: 640px; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .side-card { padding: 18px; }
+    .section-label { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: 10px; font-weight: 800; margin-bottom: 10px; }
+    .side-card h2, .panel-title { margin: 0; font-size: 18px; letter-spacing: -.025em; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 6px 0 0; }
+
+    .edge-list { display: grid; gap: 7px; margin-top: 15px; }
+    .edge-row { width: 100%; text-align: left; padding: 11px 12px; }
+    .edge-row.active { border-color: #9cb0ff; background: var(--blue-soft); }
+    .edge-row .relation { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 720; }
+    .edge-row .triple { color: var(--muted); font-size: 11px; line-height: 1.35; margin-top: 4px; }
+    .relation-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--blue); flex: 0 0 auto; }
+
+    .network-card { overflow: hidden; min-width: 0; display: flex; flex-direction: column; }
+    .network-head { padding: 16px 18px 12px; display: flex; justify-content: space-between; gap: 16px; align-items: center; border-bottom: 1px solid var(--line); }
+    .segmented { display: inline-flex; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 11px; gap: 2px; }
+    .seg-btn { border: 0; background: transparent; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .seg-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 4px rgba(20,24,18,.08); }
+    .network-wrap { position: relative; flex: 1; min-height: 480px; background: radial-gradient(circle at 50% 38%, rgba(49,90,216,.045), transparent 35%), var(--paper); }
+    #networkSvg { width: 100%; height: 100%; min-height: 480px; display: block; }
+    .network-legend { position: absolute; left: 16px; bottom: 14px; display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 11px; background: rgba(255,254,250,.9); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+    .legend-swatch { display: inline-block; width: 16px; height: 3px; border-radius: 99px; margin-right: 5px; vertical-align: middle; }
+
+    .inspector { padding: 18px; display: flex; flex-direction: column; }
+    .relation-pill { display: inline-flex; align-items: center; gap: 7px; width: fit-content; border-radius: 999px; padding: 6px 9px; background: var(--blue-soft); color: #284cb6; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .edge-title { font-size: 24px; line-height: 1.1; letter-spacing: -.035em; margin: 14px 0 7px; }
+    .edge-desc { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .metric-stack { margin-top: 18px; display: grid; gap: 8px; }
+    .metric { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 11px 12px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; }
+    .metric span { color: var(--muted); font-size: 11px; }
+    .metric strong { font-size: 17px; letter-spacing: -.02em; }
+    .confidence { margin-top: 14px; }
+    .confidence-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .bar { height: 7px; border-radius: 99px; background: #e8e7e2; overflow: hidden; margin-top: 7px; }
+    .bar > div { height: 100%; border-radius: 99px; background: var(--green); transition: width .25s ease; }
+    .inspector-note { margin-top: auto; padding-top: 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+    .lab-grid { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .lab-card { padding: 20px; }
+    .lab-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .lab-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .stepper { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; gap: 8px; }
+    .stepper-value { text-align: center; font-size: 28px; font-weight: 770; letter-spacing: -.04em; }
+    .action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .action-card { padding: 12px; text-align: left; }
+    .action-card strong { font-size: 13px; display: block; }
+    .action-card span { color: var(--muted); font-size: 11px; line-height: 1.4; display: block; margin-top: 3px; }
+    .action-card.positive:hover { border-color: #92c6b6; background: var(--green-soft); }
+    .action-card.negative:hover { border-color: #e0aaa6; background: var(--red-soft); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .field label { display: block; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    select, input[type="range"] { width: 100%; }
+    select { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 9px 10px; color: var(--ink); }
+    input[type="range"] { accent-color: var(--blue); }
+
+    .posterior-card { margin-top: 14px; padding: 20px; }
+    .posterior-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: center; }
+    .posterior-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 13px; }
+    .posterior-stat { border-top: 1px solid var(--line); padding-top: 10px; }
+    .posterior-stat span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
+    .posterior-stat strong { display: block; font-size: 22px; margin-top: 4px; letter-spacing: -.03em; }
+    #betaSvg { width: 100%; height: auto; display: block; }
+
+    details { border-top: 1px solid var(--line); }
+    details:first-child { border-top: 0; }
+    summary { list-style: none; cursor: pointer; padding: 14px 0; font-size: 13px; font-weight: 720; display: flex; justify-content: space-between; gap: 20px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--faint); font-weight: 500; }
+    details[open] summary::after { content: "−"; }
+    .details-body { padding: 0 0 15px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .equation { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; color: #3b403a; overflow-x: auto; }
+    .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+
+    .research { margin-top: 14px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; }
+    .research-card { padding: 20px; }
+    .research-card h3 { font-size: 16px; margin: 0 0 8px; letter-spacing: -.02em; }
+    .research-card p, .research-card li { color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .research-card ul { margin: 8px 0 0; padding-left: 17px; }
+    .question { font-size: 22px !important; color: var(--ink) !important; letter-spacing: -.03em; line-height: 1.25 !important; margin: 10px 0 0 !important; max-width: 760px; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .tag { padding: 6px 8px; border: 1px solid var(--line); background: var(--paper-2); border-radius: 999px; font-size: 10px; font-weight: 750; color: var(--muted); }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.55; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 360px; overflow: auto; }
+
+    .toast { position: fixed; right: 20px; bottom: 20px; background: var(--ink); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 650; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .2s ease; z-index: 20; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 1120px) {
+      .workspace { grid-template-columns: 240px minmax(0, 1fr); }
+      .inspector { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .inspector-note { margin-top: 0; padding-top: 0; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-note { max-width: 700px; }
     }
-
-    @media (max-width: 900px) {
-      .pipeline,
-      .edge-toolbar,
-      .explain-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .dimension-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    @media (max-width: 820px) {
+      .shell { width: min(100% - 20px, 1380px); padding-top: 10px; }
+      .topbar { margin-bottom: 24px; }
+      h1 { font-size: clamp(36px, 10vw, 54px); }
+      .workspace { grid-template-columns: 1fr; }
+      .edge-list { grid-template-columns: 1fr 1fr; }
+      .inspector { display: block; }
+      .network-head { align-items: flex-start; flex-direction: column; }
+      .network-wrap, #networkSvg { min-height: 430px; }
+      .lab-grid, .posterior-layout, .research { grid-template-columns: 1fr; }
+      .posterior-stats { grid-template-columns: repeat(3, 1fr); }
     }
-
-    @media (max-width: 480px) {
-      .dimension-grid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 560px) {
+      .topbar { align-items: flex-start; }
+      .brand small { display: none; }
+      .edge-list, .action-grid, .field-row, .param-grid { grid-template-columns: 1fr; }
+      .segmented { width: 100%; }
+      .seg-btn { flex: 1; }
+      .posterior-stats { grid-template-columns: 1fr; }
+      .network-wrap, #networkSvg { min-height: 390px; }
+      .network-legend { right: 12px; }
     }
   </style>
 </head>
-
 <body>
-
-  <main class="app-shell">
-
-    <!-- =====================================================
-         HEADER
-         ===================================================== -->
-
+  <main class="shell">
     <header class="topbar">
-
-      <div>
-
-        <p class="eyebrow">
-          READS LAB · MODEL PROTOTYPE
-        </p>
-
-        <h1>
-          From curriculum to teacher talk to student knowledge
-        </h1>
-
-        <p class="subhead">
-          A three-graph Bayesian model of semantic learning.
-          The curriculum defines opportunities to learn,
-          teacher talk instantiates a subset of those relations,
-          and student knowledge remains latent until evidence
-          updates our belief about each relation.
-        </p>
-
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div>READS <small>Semantic transmission lab</small></div>
       </div>
-
-      <div class="topbar-actions">
-
-        <button
-          id="resetBtn"
-          class="btn btn-secondary"
-          type="button"
-        >
-          Reset demo
-        </button>
-
+      <div class="top-actions">
+        <button class="ghost-btn" id="resetBtn" type="button">Reset simulation</button>
       </div>
-
     </header>
 
-
-    <!-- =====================================================
-         SOURCE / MODEL TRANSPARENCY BANNER
-         ===================================================== -->
-
-    <section class="panel research-banner">
-
+    <section class="hero">
       <div>
-
-        <strong>
-          What is empirical vs. proposed?
-        </strong>
-
-        <span>
-          Relation examples and the teacher-network framework
-          come from the READS materials.
-
-          The edge-level Bayesian student model and numeric
-          demo strengths below are proposed / synthetic.
-        </span>
-
+        <p class="kicker">Research prototype</p>
+        <h1>How does meaning move through instruction?</h1>
+        <p class="hero-copy">Trace one semantic relation from the curriculum, through the network a teacher actually builds in talk, into a probabilistic model of what a student may know.</p>
       </div>
-
-      <span class="status-pill">
-        transparent prototype
-      </span>
-
+      <div class="hero-note">
+        <strong>One distinction drives the whole model.</strong>
+        Curriculum opportunity is not teacher enactment, and teacher enactment is not student knowledge. The dashboard keeps those three layers separate, then models the links between them.
+      </div>
     </section>
 
+    <section class="workspace">
+      <aside class="card side-card">
+        <div class="section-label">Focus relation</div>
+        <h2>Choose an edge</h2>
+        <p class="hint">Every control below follows this same relation through the three layers.</p>
+        <div class="edge-list" id="edgeList"></div>
+      </aside>
 
-    <!-- =====================================================
-         THREE-GRAPH ARCHITECTURE
-         ===================================================== -->
-
-    <section
-      class="pipeline"
-      aria-label="Three graph learning pipeline"
-    >
-
-      <!-- CURRICULUM GRAPH -->
-
-      <article class="graph-card">
-
-        <div class="stage">
-          1 · Opportunity
-        </div>
-
-        <h3>
-          Curriculum graph
-        </h3>
-
-        <p class="muted small">
-          What relations are available in the instructional
-          environment?
-        </p>
-
-        <svg
-          id="curriculumGraph"
-          viewBox="0 0 360 260"
-          class="network"
-          aria-label="Curriculum opportunity graph"
-        ></svg>
-
-      </article>
-
-
-      <!-- TEACHER GRAPH -->
-
-      <article class="graph-card">
-
-        <div class="stage">
-          2 · Enactment
-        </div>
-
-        <h3>
-          Teacher graph
-        </h3>
-
-        <p class="muted small">
-          Which relations are actually instantiated and
-          repeated in classroom talk?
-        </p>
-
-        <svg
-          id="teacherGraph"
-          viewBox="0 0 360 260"
-          class="network"
-          aria-label="Teacher enacted graph"
-        ></svg>
-
-      </article>
-
-
-      <!-- STUDENT GRAPH -->
-
-      <article class="graph-card">
-
-        <div class="stage">
-          3 · Latent state
-        </div>
-
-        <h3>
-          Student graph
-        </h3>
-
-        <p class="muted small">
-          What is the posterior probability that the learner
-          has each relation?
-        </p>
-
-        <svg
-          id="studentGraph"
-          viewBox="0 0 360 260"
-          class="network"
-          aria-label="Latent student knowledge graph"
-        ></svg>
-
-      </article>
-
-    </section>
-
-
-    <!-- =====================================================
-         NAVIGATION
-         ===================================================== -->
-
-    <nav
-      class="tabs"
-      aria-label="READS model modules"
-    >
-
-      <button
-        class="tab active"
-        data-tab="edge"
-        type="button"
-      >
-        Selected relation
-      </button>
-
-      <button
-        class="tab"
-        data-tab="teacher"
-        type="button"
-      >
-        Teacher network
-      </button>
-
-      <button
-        class="tab"
-        data-tab="student"
-        type="button"
-      >
-        Student evidence
-      </button>
-
-      <button
-        class="tab"
-        data-tab="inference"
-        type="button"
-      >
-        Inference
-      </button>
-
-      <button
-        class="tab"
-        data-tab="explain"
-        type="button"
-      >
-        Full explanation
-      </button>
-
-    </nav>
-
-
-    <!-- =====================================================
-         TAB 1
-         SELECTED RELATION
-         ===================================================== -->
-
-    <section
-      class="tab-panel active"
-      data-panel="edge"
-    >
-
-      <div class="panel">
-
-        <div class="panel-heading-row">
-
+      <section class="card network-card">
+        <div class="network-head">
           <div>
+            <div class="section-label" id="stageEyebrow">Curriculum layer</div>
+            <h2 class="panel-title" id="stageTitle">Opportunity to learn</h2>
+            <p class="hint" id="stageDescription">Edge strength represents how available each semantic relation is in the instructional materials.</p>
+          </div>
+          <div class="segmented" aria-label="Network stage">
+            <button class="seg-btn active" data-stage="curriculum" type="button">Curriculum</button>
+            <button class="seg-btn" data-stage="teacher" type="button">Teacher</button>
+            <button class="seg-btn" data-stage="student" type="button">Student</button>
+          </div>
+        </div>
+        <div class="network-wrap">
+          <svg id="networkSvg" viewBox="0 0 760 560" role="img" aria-label="Semantic network"></svg>
+          <div class="network-legend" id="networkLegend"></div>
+        </div>
+      </section>
 
-            <h2>
-              Choose one semantic relation to trace through
-              all three graphs
-            </h2>
+      <aside class="card inspector">
+        <div>
+          <div class="relation-pill"><span class="relation-dot"></span><span id="relationType">defines</span></div>
+          <h2 class="edge-title" id="edgeTitle">skeletal → thin</h2>
+          <p class="edge-desc" id="edgeDescription"></p>
 
-            <p class="muted small">
-              The same edge is highlighted in curriculum
-              opportunity, teacher enactment, and student
-              posterior knowledge.
-            </p>
-
+          <div class="metric-stack">
+            <div class="metric"><span>Curriculum opportunity</span><strong id="metricCurriculum">0.82</strong></div>
+            <div class="metric"><span>Teacher enactments</span><strong id="metricTeacher">3</strong></div>
+            <div class="metric"><span>Student posterior</span><strong id="metricStudent">0.50</strong></div>
+            <div class="metric"><span>Posterior uncertainty</span><strong id="metricSd">0.20</strong></div>
           </div>
 
-          <span
-            id="selectedRelationPill"
-            class="status-pill"
-          >
-            defines
-          </span>
-
+          <div class="confidence">
+            <div class="confidence-head"><span>Model confidence</span><span id="confidenceLabel">medium</span></div>
+            <div class="bar"><div id="confidenceBar" style="width: 50%"></div></div>
+          </div>
         </div>
-
-
-        <div class="edge-toolbar">
-
-          <!-- SELECT RELATION -->
-
-          <label class="field">
-
-            Relation
-
-            <select
-              id="edgeSelect"
-              class="select-input"
-            ></select>
-
-          </label>
-
-
-          <!-- CURRICULUM -->
-
-          <label class="field">
-
-            Curriculum availability
-
-            <span
-              id="curriculumStrengthLabel"
-              class="mono"
-            >
-              0.82
-            </span>
-
-            <input
-              id="curriculumStrengthRange"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value="0.82"
-            />
-
-          </label>
-
-
-          <!-- EXTERNAL RELATION PRIOR -->
-
-          <label class="field">
-
-            External relational prior
-
-            <span
-              id="externalStrengthLabel"
-              class="mono"
-            >
-              0.58
-            </span>
-
-            <input
-              id="externalStrengthRange"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value="0.58"
-            />
-
-          </label>
-
-        </div>
-
-
-        <div
-          id="edgeMeaningBox"
-          class="callout"
-        ></div>
-
-      </div>
-
-
-      <!-- SELECTED RELATION SUMMARY -->
-
-      <div
-        class="metric-grid"
-        style="margin-top: 16px"
-      >
-
-        <div class="metric-card">
-
-          <span>
-            Curriculum opportunity
-          </span>
-
-          <strong id="curriculumMetric">
-            0.820
-          </strong>
-
-        </div>
-
-
-        <div class="metric-card">
-
-          <span>
-            Teacher mentions
-          </span>
-
-          <strong id="teacherMentionsMetric">
-            3
-          </strong>
-
-        </div>
-
-
-        <div class="metric-card">
-
-          <span>
-            Student posterior
-          </span>
-
-          <strong id="studentPosteriorMetric">
-            0.500
-          </strong>
-
-        </div>
-
-      </div>
-
+        <div class="inspector-note">Relation labels are grounded in the teacher-network coding framework. Numerical strengths and the student edge model are a transparent simulation, not fitted READS estimates.</div>
+      </aside>
     </section>
 
-
-    <!-- =====================================================
-         TAB 2
-         TEACHER NETWORK
-         ===================================================== -->
-
-    <section
-      class="tab-panel"
-      data-panel="teacher"
-    >
-
-      <div class="two-col">
-
-        <div class="panel">
-
-          <h2>
-            Teacher enactment is an exposure process
-          </h2>
-
-          <p class="muted">
-            The teacher-talk work treats each utterance as a
-            typed semantic link.
-
-            Repetition becomes edge weight; breadth and
-            structure come from the network as a whole.
-          </p>
-
-
-          <!-- MENTION COUNT -->
-
-          <label class="field">
-
-            Selected edge mention count
-
-            <span
-              id="teacherMentionsLabel"
-              class="mono"
-            >
-              3
-            </span>
-
-            <input
-              id="teacherMentionsRange"
-              type="range"
-              min="0"
-              max="12"
-              step="1"
-              value="3"
-            />
-
-          </label>
-
-
-          <button
-            id="addMentionBtn"
-            class="btn btn-primary full"
-            type="button"
-          >
-            Add one teacher mention
-          </button>
-
-
-          <div class="callout">
-
-            This demo treats more mentions as stronger
-            exposure, but it does
-
-            <strong>
-              not
-            </strong>
-
-            assume repetition is always better.
-
-            The READS materials explicitly leave open whether
-            repeated links strengthen learning or crowd out
-            relational variety.
-
+    <section class="lab-grid">
+      <article class="card lab-card">
+        <div class="lab-head">
+          <div>
+            <div class="section-label">Teacher layer</div>
+            <h2 class="panel-title">Change enacted exposure</h2>
+            <p>Manipulate how often the selected relation is actually instantiated in teacher talk.</p>
           </div>
-
+          <span class="relation-pill" style="background:var(--amber-soft);color:var(--amber)">enactment</span>
         </div>
-
-
-        <div class="stack">
-
-          <!-- RICHNESS DIMENSIONS -->
-
-          <div class="panel">
-
-            <h2>
-              Working “richness” view
-            </h2>
-
-            <p class="muted small">
-              These five dimensions come from the
-              teacher-network framework.
-
-              The numeric summaries here are illustrative
-              operationalizations, not validated scales.
-            </p>
-
-
-            <div class="dimension-grid">
-
-              <div class="dimension">
-
-                <strong>
-                  Size
-                </strong>
-
-                <span>
-                  many linked ideas
-                </span>
-
-                <span
-                  id="richSize"
-                  class="dimension-value"
-                >
-                  0.00
-                </span>
-
-              </div>
-
-
-              <div class="dimension">
-
-                <strong>
-                  Variety
-                </strong>
-
-                <span>
-                  different relation types
-                </span>
-
-                <span
-                  id="richVariety"
-                  class="dimension-value"
-                >
-                  0.00
-                </span>
-
-              </div>
-
-
-              <div class="dimension">
-
-                <strong>
-                  Repetition
-                </strong>
-
-                <span>
-                  same links revisited
-                </span>
-
-                <span
-                  id="richRepetition"
-                  class="dimension-value"
-                >
-                  0.00
-                </span>
-
-              </div>
-
-
-              <div class="dimension">
-
-                <strong>
-                  Web
-                </strong>
-
-                <span>
-                  neighbors linked together
-                </span>
-
-                <span
-                  id="richWeb"
-                  class="dimension-value"
-                >
-                  0.00
-                </span>
-
-              </div>
-
-
-              <div class="dimension">
-
-                <strong>
-                  Reach
-                </strong>
-
-                <span>
-                  links unlock other words
-                </span>
-
-                <span
-                  id="richReach"
-                  class="dimension-value"
-                >
-                  0.00
-                </span>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <!-- TEACHER SUMMARY -->
-
-          <div class="panel">
-
-            <h2>
-              Teacher graph summary
-            </h2>
-
-            <div
-              id="teacherSummary"
-              class="muted"
-            ></div>
-
-          </div>
-
+        <div class="stepper">
+          <button class="mini-btn" id="teacherMinus" type="button">−</button>
+          <div class="stepper-value" id="teacherCount">3</div>
+          <button class="mini-btn" id="teacherPlus" type="button">+</button>
         </div>
+        <div class="metric-stack" style="margin-top:14px">
+          <div class="metric"><span>Teacher network size</span><strong id="teacherSize">0.00</strong></div>
+          <div class="metric"><span>Relation variety</span><strong id="teacherVariety">0.00</strong></div>
+          <div class="metric"><span>Repetition</span><strong id="teacherRepetition">0.00</strong></div>
+        </div>
+      </article>
 
-      </div>
-
+      <article class="card lab-card">
+        <div class="lab-head">
+          <div>
+            <div class="section-label">Student layer</div>
+            <h2 class="panel-title">Add assessment evidence</h2>
+            <p>The same answer counts differently depending on what the student had to do.</p>
+          </div>
+          <span class="relation-pill" style="background:var(--green-soft);color:var(--green)">posterior</span>
+        </div>
+        <div class="action-grid">
+          <button class="action-card positive" data-evidence="recognition" data-correct="1" type="button"><strong>Correct recognition</strong><span>Weak positive evidence</span></button>
+          <button class="action-card positive" data-evidence="explanation" data-correct="1" type="button"><strong>Correct explanation</strong><span>Stronger positive evidence</span></button>
+          <button class="action-card positive" data-evidence="transfer" data-correct="1" type="button"><strong>Successful transfer</strong><span>Strongest positive evidence</span></button>
+          <button class="action-card negative" data-evidence="explanation" data-correct="0" type="button"><strong>Failed explanation</strong><span>Negative evidence</span></button>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="hintsSelect">Hints used</label>
+            <select id="hintsSelect"><option value="0">None</option><option value="1">One</option><option value="2">Several</option></select>
+          </div>
+          <div class="field">
+            <label for="difficultyRange">Task difficulty <span id="difficultyValue">0.50</span></label>
+            <input id="difficultyRange" type="range" min="0" max="1" step="0.05" value="0.5" />
+          </div>
+        </div>
+      </article>
     </section>
 
-
-    <!-- =====================================================
-         TAB 3
-         STUDENT EVIDENCE
-         ===================================================== -->
-
-    <section
-      class="tab-panel"
-      data-panel="student"
-    >
-
-      <div class="two-col">
-
-        <!-- INPUT PANEL -->
-
-        <div class="panel">
-
-          <h2>
-            Add student evidence about the selected relation
-          </h2>
-
-          <p class="muted">
-            The student graph is latent.
-
-            Assessments contribute weighted evidence about
-            whether a semantic relation is actually represented
-            by the learner.
-          </p>
-
-
-          <!-- RESPONSE TYPE -->
-
-          <label class="field">
-
-            Evidence type
-
-            <select
-              id="responseTypeSelect"
-              class="select-input"
-            >
-
-              <option value="recognition">
-                Recognition
-              </option>
-
-              <option
-                value="short"
-                selected
-              >
-                Short explanation
-              </option>
-
-              <option value="explanation">
-                Explain the relation
-              </option>
-
-              <option value="transfer">
-                Transfer / apply in a new context
-              </option>
-
-            </select>
-
-          </label>
-
-
-          <div class="field-grid">
-
-            <!-- CORRECTNESS -->
-
-            <label class="field">
-
-              Result
-
-              <select
-                id="resultSelect"
-                class="select-input"
-              >
-
-                <option
-                  value="1"
-                  selected
-                >
-                  Correct / demonstrated
-                </option>
-
-                <option value="0">
-                  Incorrect / not demonstrated
-                </option>
-
-              </select>
-
-            </label>
-
-
-            <!-- HINTS -->
-
-            <label class="field">
-
-              Hints used
-
-              <select
-                id="hintsSelect"
-                class="select-input"
-              >
-
-                <option
-                  value="0"
-                  selected
-                >
-                  None
-                </option>
-
-                <option value="1">
-                  One
-                </option>
-
-                <option value="2">
-                  Several
-                </option>
-
-              </select>
-
-            </label>
-
+    <section class="card posterior-card">
+      <div class="posterior-layout">
+        <div>
+          <div class="section-label">Bayesian readout</div>
+          <h2 class="panel-title">Belief about the selected student relation</h2>
+          <p class="hint" id="posteriorExplanation">The prior reflects curriculum opportunity and teacher enactment. Direct student evidence then updates the Beta posterior.</p>
+          <div class="posterior-stats">
+            <div class="posterior-stat"><span>Contextual prior</span><strong id="priorMean">0.50</strong></div>
+            <div class="posterior-stat"><span>Posterior mean</span><strong id="posteriorMean">0.50</strong></div>
+            <div class="posterior-stat"><span>Evidence mass</span><strong id="evidenceMass">0.00</strong></div>
           </div>
-
-
-          <!-- DIFFICULTY -->
-
-          <label class="field">
-
-            Task difficulty
-
-            <span
-              id="difficultyLabel"
-              class="mono"
-            >
-              0.50
-            </span>
-
-            <input
-              id="difficultyRange"
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value="0.50"
-            />
-
-          </label>
-
-
-          <button
-            id="applyStudentEvidenceBtn"
-            class="btn btn-primary full"
-            type="button"
-          >
-            Update student posterior
-          </button>
-
-
-          <button
-            id="clearStudentEvidenceBtn"
-            class="btn btn-secondary full"
-            type="button"
-          >
-            Clear student evidence for this edge
-          </button>
-
-
-          <div
-            id="studentExplanation"
-            class="callout"
-          >
-            No direct student evidence has been added to this
-            relation yet.
-          </div>
-
         </div>
+        <svg id="betaSvg" viewBox="0 0 360 190" role="img" aria-label="Beta posterior density"></svg>
+      </div>
+    </section>
 
+    <section class="research">
+      <article class="card research-card">
+        <div class="section-label">Research question</div>
+        <p class="question">Which properties of a teacher-enacted semantic network predict the appearance, strengthening, and transfer of corresponding relations in students’ knowledge?</p>
+        <div class="tag-row"><span class="tag">curriculum graph</span><span class="tag">teacher talk</span><span class="tag">student latent graph</span><span class="tag">multilevel Bayes</span><span class="tag">dynamic knowledge tracing</span></div>
+      </article>
 
-        <!-- POSTERIOR OUTPUT -->
+      <article class="card research-card">
+        <div class="section-label">Model notes</div>
+        <details open>
+          <summary>What is source-derived?</summary>
+          <div class="details-body">The curriculum-network pipeline, teacher semantic triples, relation taxonomy, and the conceptual dimensions of rich teacher networks come from the READS materials you provided.</div>
+        </details>
+        <details>
+          <summary>What is proposed here?</summary>
+          <div class="details-body">The latent student edge graph, the contextual Beta prior, fractional evidence updates, and the direct coupling from teacher enactment to student-edge probability are modeling proposals to test.</div>
+        </details>
+        <details>
+          <summary>Where does ConceptNet fit?</summary>
+          <div class="details-body">As an optional external relational prior or validation source. It should complement curriculum-derived distributional structure, not replace classroom evidence.</div>
+        </details>
+      </article>
+    </section>
 
-        <div class="stack">
+    <section class="card research-card" style="margin-top:14px">
+      <div class="section-label">Advanced model</div>
+      <details>
+        <summary>Show the mathematics and tune assumptions</summary>
+        <div class="details-body">
+          <div class="equation">logit(πₑ) = b₀ + βC·Curriculumₑ + βX·Externalₑ + βT·log(1 + Mentionsₑ) + βR·(Richness − 0.5)<br><br>π̃ₑ = (1 − τ)πₑ + τμₑ<br><br>θᵢₑ ~ Beta(κπ̃ₑ, κ(1 − π̃ₑ))<br>α′ = α + wy &nbsp;&nbsp;&nbsp; β′ = β + w(1 − y)</div>
+          <div class="param-grid">
+            <div class="field"><label for="curriculumWeight">Curriculum weight <span id="curriculumWeightValue">1.25</span></label><input id="curriculumWeight" type="range" min="0" max="2.5" step="0.05" value="1.25" /></div>
+            <div class="field"><label for="externalWeight">External prior weight <span id="externalWeightValue">0.55</span></label><input id="externalWeight" type="range" min="0" max="2" step="0.05" value="0.55" /></div>
+            <div class="field"><label for="teacherWeight">Teacher exposure weight <span id="teacherWeightValue">0.42</span></label><input id="teacherWeight" type="range" min="0" max="1.5" step="0.03" value="0.42" /></div>
+            <div class="field"><label for="richnessWeight">Network richness weight <span id="richnessWeightValue">0.60</span></label><input id="richnessWeight" type="range" min="0" max="1.5" step="0.05" value="0.60" /></div>
+            <div class="field"><label for="poolingWeight">Hierarchical pooling <span id="poolingWeightValue">0.35</span></label><input id="poolingWeight" type="range" min="0" max="1" step="0.05" value="0.35" /></div>
+            <div class="field"><label for="externalStrength">Selected-edge external prior <span id="externalStrengthValue">0.58</span></label><input id="externalStrength" type="range" min="0" max="1" step="0.01" value="0.58" /></div>
+          </div>
+        </div>
+      </details>
+      <details>
+        <summary>Inspect current simulator state</summary>
+        <div class="details-body"><pre id="stateInspector"></pre></div>
+      </details>
+    </section>
+  </main>
 
-          <div class="metric-grid">
-
-            <div class="metric-card">
-
-              <span>
-                Prior after context
-              </span>
-
-              <strong id="priorMean">
-                0.500
-              </strong>
-
-            </div>
-
-
-            <div class="metric-card">
-
-              <span>
-                Posterior mean
-              </span>
-
-              <strong id="posteriorMean">
-                0.500
-              </strong>
-
-            </div>
-
-
-            <div class="metric-card">
-
-              <span>
-                Posterior SD
-              </span>
-
-              <strong id="posteriorSd">
-                0.200
-              </strong>
-
-            </div>
-
-     
+  <div class="toast" id="toast"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
